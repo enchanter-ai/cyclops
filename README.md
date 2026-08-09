@@ -129,7 +129,7 @@ flowchart LR
   A -->|"③ post body = key"| P
   P --> W
   P --> F
-  P -. "blocks in prevent" .-> N
+  P -.->|blocks in prevent| N
   P ==>|"untrusted → sensitive → egress ?"| V
 ```
 
