@@ -29,7 +29,7 @@ Issues = "https://github.com/enchanter-ai/cyclops/issues"
 Changelog = "https://github.com/enchanter-ai/cyclops/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-live = ["claude-agent-sdk>=0.1", "anyio>=4.0"]
+live = ["claude-agent-sdk>=0.2.131", "anyio>=4.0"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
 
 [project.scripts]
