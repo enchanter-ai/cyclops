@@ -20,7 +20,7 @@ classifiers = [
   "Topic :: Security",
   "Typing :: Typed",
 ]
-dependencies = ["mcp>=1.0", "networkx>=3.0"]
+dependencies = ["mcp>=1.0,<2.0", "networkx>=3.0"]
 
 [project.urls]
 Homepage = "https://github.com/enchanter-ai/cyclops"
