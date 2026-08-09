@@ -1,0 +1,6 @@
+untrusted_servers = ["web"]
+sensitive_servers = ["filesystem"]
+sensitive_paths = [".ssh", "id_rsa", "id_ed25519", ".env", "credentials", ".aws"]
+secret_markers = ["PRIVATE KEY", "BEGIN OPENSSH", "aws_secret", "password=", "token="]
+egress = [["notify", "post"]]
+token_regex = "[A-Za-z0-9_]{6,}"
