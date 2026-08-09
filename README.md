@@ -171,8 +171,8 @@ flowchart TB
   classDef d fill:#3a1a18,stroke:#ff6b5e,color:#ffd9d4
   classDef g fill:#123626,stroke:#57c98a,color:#d6f5e5
   call["tool call<br/>(server · tool · args · result)"]:::n --> classify["C1 classify.py<br/>taint tag"]:::n
-  classify --> graph["C3 graph.py + overlap.py<br/>add node + derivation edges"]:::n
-  graph --> check{"C2 egress call closes<br/>untrusted → sensitive → egress?"}:::n
+  classify --> gph["C3 graph.py + overlap.py<br/>add node + derivation edges"]:::n
+  gph --> check{"C2 egress call closes<br/>untrusted → sensitive → egress?"}:::n
   check -- no --> fwd["forward · record metrics"]:::g
   check -- yes --> sev["C4 severity.py<br/>leaked bytes + C5 choke-point"]:::n
   sev --> mode{"C6 mode?"}:::n
@@ -183,10 +183,12 @@ flowchart TB
 ## Install
 
 ```sh
+git clone https://github.com/enchanter-ai/cyclops
+cd cyclops
 pip install -e .
 ```
 
-Runtime needs only `mcp` and `networkx`. The live path (a real Claude agent) is an optional extra:
+Editable from a clone because `demo` replays the **bundled** traces in `recordings/`. Runtime needs only `mcp` and `networkx`. The live path (a real Claude agent) is an optional extra:
 
 ```sh
 pip install -e ".[live]"   # adds claude-agent-sdk + anyio
