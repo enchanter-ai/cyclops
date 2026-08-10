@@ -13,4 +13,16 @@ def test_demo_encoded_is_caught():
     assert "RED" in demo("poisoned-encoded", Mode.DETECT)
 
 def test_demo_prevent_blocks():
-    assert "BLOCKED" in demo("poisoned", Mode.PREVENT)
+    out = demo("poisoned", Mode.PREVENT)
+    assert "BLOCKED" in out
+    assert "'blocked': 1" in out
+
+def test_demo_detect_does_not_block():
+    out = demo("poisoned", Mode.DETECT)
+    assert "FLAGGED" in out
+    assert "'blocked': 0" in out
+
+def test_demo_benign_prevent_not_blocked():
+    out = demo("benign", Mode.PREVENT)
+    assert "no toxic flow" in out
+    assert "'blocked': 0" in out

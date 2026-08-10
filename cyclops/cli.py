@@ -14,7 +14,9 @@ def _load(scenario: str) -> list[dict[str, Any]]:
 def demo(scenario: str, mode: Mode) -> str:
     detector = Detector(mode)
     for record in _load(scenario):
-        detector.feed(Server(record["server"]), Tool(record["tool"]), record["args"], record["result"])
+        call = detector.feed(Server(record["server"]), Tool(record["tool"]), record["args"], record["result"])
+        if call.is_egress:
+            detector.blocks(call)
     return render(detector)
 
 def main() -> None:

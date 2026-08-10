@@ -1,14 +1,13 @@
 from .detector import Detector
-from .enums import Mode
 
 def render(detector: Detector) -> str:
     path = detector.toxic_path()
     lines = []
     if path:
-        verb = "BLOCKED" if detector.mode is Mode.PREVENT else "FLAGGED"
+        verb = "BLOCKED" if detector.metrics.blocked else "FLAGGED"
         lines.append(f"[RED] TOXIC FLOW {verb}")
         lines.append("  " + " -> ".join(f"{c.server}:{c.tool} ({c.taint})" for c in path))
-        lines.append(f"  leaked: ~{detector.leak_bytes()} bytes of sensitive data reached egress")
+        lines.append(f"  leaked: ~{detector.leak_bytes()} bytes of distinctive secret tokens reached egress")
         lines.append(f"  choke point: remove {path[-1].server}:{path[-1].tool} to break this flow")
     else:
         lines.append("[GREEN] no toxic flow")
