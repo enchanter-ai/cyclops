@@ -68,7 +68,7 @@ flowchart TD
 | `records/tool_call.py` | `ToolCall` dataclass (+ `is_egress`) | config, enums |
 | `records/metrics.py` | `Metrics` dataclass — calls / flagged / blocked / taint | enums |
 | `classify.py` | assigns `Taint` to a call from server + path + content | config, enums |
-| `severity.py` | how many bytes of the secret reached the sink | overlap |
+| `severity.py` | distinctive secret-token bytes reaching the sink (aggregated per sink) | overlap |
 | `graph.py` | provenance DiGraph; `find_toxic_path()` = untrusted→sensitive→egress | overlap, records, enums |
 | `detector.py` | **hub** — `feed` / `toxic_path` / `leak_bytes` / `blocks`, holds graph + metrics | classify, graph, severity, records |
 | `report.py` | renders verdict + leak + choke-point + Mermaid | detector |

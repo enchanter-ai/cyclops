@@ -35,7 +35,7 @@ anywhere the research could find.
 
 | # | Idea | Why a CTO leans in | In cyclops now? | Prior art it extends |
 |---|------|--------------------|------------------|----------------------|
-| 1 | **Leak-volume severity (bytes/bits at the sink)** | Turns a boolean alert into a triage number — Dig's "how much data" | **BUILT** (`severity.py`, reported per flow) | QIF foundations (Smith, NIFuzz) — ported to agent runtime |
+| 1 | **Leak-volume severity (bytes/bits at the sink)** | Turns a boolean alert into a triage number — Dig's "how much data" | **BUILT** (`severity.py`; distinctive secret-token bytes, aggregated per sink) | QIF foundations (Smith, NIFuzz) — ported to agent runtime |
 | 2 | **Encoding-unmask** (decode base64/hex before matching) | Visibly kills the evasion that defeats DLP/substring | **BUILT** (`overlap.py`; `poisoned-encoded` scenario) | Beats signature EDR/DLP; makes live what NeuroTaint does offline |
 | 3 | **Data-value provenance** (the actual secret bytes traverse file→sink) | The "smoking gun" evidentiary fact for an IR report | **BUILT** (argument-level derivation) | Extends Invariant's tool-*type* flow to data-*value* |
 | 4 | **Deterministic, model-free detector** | No LLM in the decision path → not injectable, offline, replayable | **BUILT** (pure graph rules) | Beats LLM-judge guardrails |

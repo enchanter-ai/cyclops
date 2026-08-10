@@ -9,7 +9,7 @@
   <a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/enchanter-ai/cyclops/ci.yml?branch=main&style=for-the-badge"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-58a6ff?style=for-the-badge">
   <img alt="6 algorithms" src="https://img.shields.io/badge/Algorithms-6-bc8cff?style=for-the-badge">
-  <img alt="22 tests" src="https://img.shields.io/badge/Tests-22-8957e5?style=for-the-badge">
+  <img alt="36 tests" src="https://img.shields.io/badge/Tests-36-8957e5?style=for-the-badge">
   <img alt="Zero LLM calls in the decision path" src="https://img.shields.io/badge/LLM_in_decision_path-0-f85149?style=for-the-badge">
   <a href="https://www.repostatus.org/#active"><img alt="Project Status: Active" src="https://www.repostatus.org/badges/latest/active.svg"></a>
 </p>
@@ -32,7 +32,7 @@ cyclops sits between an autonomous MCP agent and its tools, watches every tool c
 
 **In plain English:** an attacker hides an instruction in a web page; your AI agent reads a secret and tries to send it out; cyclops catches the send and blocks it — without ever asking a model.
 
-**Technically:** C1 taint-classifies every tool result (untrusted / sensitive / normal) from data in `patterns.toml`; C3 draws data-derivation edges between calls by matching distinctive tokens across base64/hex-decoded forms of their arguments; C2 declares a flow toxic iff a directed path `untrusted ⇝ sensitive ⇝ egress` exists in the provenance graph (`networkx.has_path`); C4 measures the leak in bytes; C5 names the choke-point; C6 forwards (detect) or denies (prevent). No step calls an LLM — the whole decision path is deterministic and replayable.
+**Technically:** C1 taint-classifies every tool result (untrusted / sensitive / normal) from data in `patterns.toml`; C3 draws data-derivation edges between calls by matching distinctive tokens across base64/hex-decoded forms of their arguments; C2 declares a flow toxic iff a directed path `untrusted ⇝ sensitive ⇝ egress` exists in the provenance graph (`networkx.has_path`); C4 measures the leak as distinctive secret-token bytes; C5 names the choke-point; C6 forwards (detect) or denies (prevent). No step calls an LLM — the whole decision path is deterministic and replayable.
 
 ---
 
@@ -86,7 +86,7 @@ Not for:
 | **Runtime dependencies** | 2 (`mcp`, `networkx`) |
 | **Transports** | 2 (stdio, Streamable HTTP) |
 | **Modes** | 2 (detect, prevent) |
-| **Tests** | 22 |
+| **Tests** | 36 |
 | **Lines of Python** | 555 |
 | **Python** | 3.11+ |
 
@@ -210,7 +210,7 @@ cyclops attack                                     # malicious client vs the liv
 **Testing locally vs. deploying** — these are different axes:
 
 - **Test on your workstation** → the **CLI** (`cyclops demo`, `cyclops attack`): offline, deterministic, no agent wiring. Not part of the MCP interface.
-- **Deploy** → wire the **MCP proxy** (`cyclops.proxy`) into an agent host, over **stdio** (Claude Desktop / Cursor launch it as a child process) or over **Streamable HTTP** (`python -m cyclops.proxy --http`, network-reachable). That is the product.
+- **Deploy** → wire the **MCP proxy** (`cyclops.proxy`) into an agent host, over **stdio** (Claude Desktop / Cursor launch it as a child process) or over **Streamable HTTP** (`python -m cyclops.proxy --http`, network-reachable — single-tenant / experimental: one detector per process, so prefer stdio for isolated multi-tenant use, and per-session isolation is roadmap). That is the product.
 
 ## The Modules
 
@@ -287,7 +287,7 @@ toxic(G) ⇔ ∃ u, s, e :  taint(u) = UNTRUSTED  ∧  taint(s) = SENSITIVE  ∧
                          ∧  has_path(G, u, s)  ∧  has_path(G, s, e)
 ```
 
-Direction is the proof that the secret flowed *out* — reverse the arrows and the statement is meaningless. → `graph.py` (`networkx.DiGraph`)
+Direction is the proof that the secret flowed *out* — reverse the arrows and the statement is meaningless. cyclops reports the **first** toxic path found (each segment shortest), not a globally-ranked choke-point — multi-path ranking is roadmap. → `graph.py` (`networkx.DiGraph`)
 
 ### C3 — Encoding-Unmask Token Overlap
 
@@ -306,7 +306,7 @@ This is what defeats `base64(key)` exfiltration and standard substring DLP evasi
 leaked_bytes = max over f ∈ forms(sink_args)  Σ_{t ∈ tokens(secret) ∩ tokens(f)} |t|
 ```
 
-The count of distinctive secret bytes that actually reached the sink. → `severity.py`
+The count of distinctive secret-token bytes that reached the egress **attempt** (the choke point cyclops fronts — not confirmed remote delivery). `Detector.leak_bytes` aggregates this across every sensitive source with a path to the sink. → `severity.py` / `detector.py`
 
 ### C5 — Choke-Point
 
@@ -393,13 +393,15 @@ A file-by-file map with runtime flows lives in [docs/architecture.md](docs/archi
 pytest
 ```
 
-22 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
+36 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
 
 - Taint classification (4)
-- Encoding-unmask overlap (3)
-- Leak-volume severity (3)
-- Detector detect / prevent (5)
-- Offline demo replay, end-to-end (4)
+- Encoding-unmask overlap — base64, hex, nested (6)
+- Leak-volume severity (4)
+- Detector detect / prevent, targeted blocking, leak aggregation (8)
+- Offline demo replay + prevent/detect blocking (6)
+- Proxy tool-name collision handling (2)
+- Sandbox path containment (3)
 - House-style guard — no comments, no double blank lines (3)
 
 The **detection smoke** CI step additionally asserts that `prevent` blocks the exfil and `benign` stays silent.
