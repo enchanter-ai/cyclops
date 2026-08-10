@@ -28,6 +28,12 @@ def _text(content: list[ContentBlock]) -> str:
 def _blocked() -> list[ContentBlock]:
     return [TextContent(type="text", text="cyclops blocked this call: toxic flow untrusted -> sensitive -> egress")]
 
+def _claim(owner: dict[str, Server], names: list[str], server: Server) -> None:
+    for name in names:
+        if name in owner:
+            raise ValueError(f"duplicate tool name across downstream servers: {name}")
+        owner[name] = server
+
 @contextlib.asynccontextmanager
 async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
     detector = Detector(mode)
@@ -66,8 +72,7 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
             session = await stack.enter_async_context(ClientSession(read, write))
             await session.initialize()
             sessions[server] = session
-            for mcp_tool in (await session.list_tools()).tools:
-                owner[mcp_tool.name] = server
+            _claim(owner, [t.name for t in (await session.list_tools()).tools], server)
         yield app, detector
 
 async def serve_stdio(mode: Mode = Mode.DETECT) -> None:
@@ -84,11 +89,12 @@ def serve_http(mode: Mode, host: str, port: int) -> None:
 
     @contextlib.asynccontextmanager
     async def lifespan(_app: Any) -> AsyncIterator[None]:
-        async with connected(mode) as (app, _detector):
+        async with connected(mode) as (app, detector):
             manager = StreamableHTTPSessionManager(app=app, json_response=True, stateless=True)
             async with manager.run():
                 state["manager"] = manager
                 yield
+            _dump(detector)
 
     async def handle(scope: Any, receive: Any, send: Any) -> None:
         await state["manager"].handle_request(scope, receive, send)
