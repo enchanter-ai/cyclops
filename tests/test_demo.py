@@ -26,3 +26,15 @@ def test_demo_benign_prevent_not_blocked():
     out = demo("benign", Mode.PREVENT)
     assert "no toxic flow" in out
     assert "'blocked': 0" in out
+
+def test_demo_excessive_agency_is_red():
+    out = demo("excessive-agency", Mode.DETECT)
+    assert "RED" in out
+    assert "EXCESSIVE_AGENCY" in out
+    assert "LLM06:2025" in out
+    assert "leaked" not in out
+
+def test_demo_excessive_agency_prevent_blocks():
+    out = demo("excessive-agency", Mode.PREVENT)
+    assert "BLOCKED" in out
+    assert "'blocked': 1" in out

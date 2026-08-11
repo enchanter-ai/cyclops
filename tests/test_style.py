@@ -1,7 +1,7 @@
 import tokenize
 from pathlib import Path
 
-_SOURCES = sorted(Path("cyclops").rglob("*.py"))
+_SOURCES = sorted(Path("cyclops").rglob("*.py")) + sorted(Path("tests").rglob("*.py"))
 
 def test_sources_found():
     assert _SOURCES
