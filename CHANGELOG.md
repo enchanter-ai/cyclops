@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
+- **Multi-class flow rule engine.** The single hard-coded trifecta is generalized into a typed engine. `FlowClass` enum (`EXFILTRATION`, `EXCESSIVE_AGENCY`); `graph.find_toxic_flows()` returns typed `Flow` records (class + ordered chain) with a targeted per-sink variant; `report.py` prints the class and its OWASP tag next to the verdict; `Metrics` counts flags per class.
+- **`EXCESSIVE_AGENCY` flow class** (`untrusted → privileged action`, no sensitive read) — an untrusted source reaching a privileged `(server, tool)` sink whose arguments derive from the untrusted content. `EXFILTRATION` remains an untouched subset of the same graph. OWASP LLM Top 10 (2025) tags carried as data in `patterns.toml` (`LLM06:2025` / `LLM02:2025`).
+- **Privileged action model.** A `privileged` `(server, tool)` table in `patterns.toml` (mirroring `egress`), loaded by `config.py`; an `is_privileged` property on `ToolCall` (mirroring `is_egress`). A mock `admin` server with a harmless `grant_access` action, an `excessive-agency` scenario + recorded trace, and regression tests (detection, targeted blocking, benign-not-flagged, agency-without-exfil, OWASP tag).
 - Tier-1 governance docs: `LICENSE`, `SECURITY.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `CITATION.cff`, `CLAUDE.md`.
 - `.github/` scaffold: CI workflow (ruff + mypy + pytest on 3.11/3.12), issue templates, PR template, `CODEOWNERS`, dependabot config.
 - Package metadata in `pyproject.toml`: license, authors, keywords, classifiers, project URLs.

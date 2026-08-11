@@ -16,6 +16,9 @@ credited by name; overclaiming is called out explicitly.
   constraints** — **mcp-scan proxy mode already ships this.** Do not claim "first
   runtime proxy."
 - **Taint tracking / value-level provenance** — established in the literature.
+- **The risk taxonomy** (Excessive Agency, Sensitive Information Disclosure) — **OWASP
+  GenAI / LLM Top 10 (2025)**, codes `LLM06:2025` and `LLM02:2025`. cyclops names the
+  classes it enforces by their OWASP code; it does not author the taxonomy.
 - **Bloom markets graph-based contextual assessment** — do not claim they "don't do
   graphs"; their live per-flow depth is simply undisclosed (stealth).
 
@@ -46,6 +49,7 @@ anywhere the research could find.
 | 9 | **Semantic/causal taint** (catch paraphrased/summarized secrets via embedding similarity) | Beats the paraphrase evasion | ROADMAP (FP risk at days-scale) | Ports NeuroTaint offline→live |
 | 10 | **Flow-forensics receipt** (signed causal incident timeline) | Endpoint-native IR narrative | ROADMAP | New packaging |
 | 11 | **Honest benchmark** (AgentDojo recall @ fixed FPR) | A measured number from a candidate is disarming | ROADMAP | Standard bench |
+| 12 | **Multi-class flow engine** (typed `FlowClass` + OWASP tag; `EXFILTRATION` ⊂ engine, `EXCESSIVE_AGENCY` added as `untrusted → privileged action`) | One deterministic graph, more than one OWASP risk class blocked before the sink — not just exfil | **BUILT** (`enums/flow_class.py`, `graph.find_toxic_flows`, `excessive-agency` scenario) | Extends the single trifecta to a rule engine over the OWASP LLM Top 10 |
 
 ## The one demo moment
 

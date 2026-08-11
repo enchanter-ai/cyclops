@@ -1,6 +1,6 @@
 # Cyclops — Agent Contract
 
-Audience: Claude. Cyclops is a deterministic, model-free MCP proxy that detects and prevents the toxic flow `untrusted-web → sensitive-read → external-egress`. It watches an autonomous MCP agent's tool calls from the outside and never trusts or modifies the agent.
+Audience: Claude. Cyclops is a deterministic, model-free MCP proxy that detects and prevents typed toxic flows over a provenance graph — `EXFILTRATION` (`untrusted-web → sensitive-read → external-egress`) and `EXCESSIVE_AGENCY` (`untrusted → privileged action`, args derived from untrusted content, no sensitive read). Each class carries its OWASP LLM Top 10 (2025) code. It watches an autonomous MCP agent's tool calls from the outside and never trusts or modifies the agent.
 
 ## Hard invariants
 
@@ -14,26 +14,26 @@ Audience: Claude. Cyclops is a deterministic, model-free MCP proxy that detects 
 
 ```
 cyclops/
-  enums/      Server, Tool, Taint, Mode
-  records/    ToolCall, Metrics (dataclasses)
-  patterns.toml   detection data
+  enums/      Server, Tool, Taint, Mode, FlowClass
+  records/    ToolCall, Metrics, Flow (dataclasses)
+  patterns.toml   detection data (untrusted / sensitive / egress / privileged / owasp)
   config.py   loads patterns.toml into typed constants
   classify.py taint classification
   overlap.py  encoding-unmask + token matching
-  graph.py    provenance graph + toxic-path search
+  graph.py    provenance graph + typed find_toxic_flows (exfil + excessive-agency)
   severity.py leak-volume in bytes
-  detector.py detect / prevent orchestration + metrics
-  report.py   CLI verdict + Mermaid graph
+  detector.py detect / prevent orchestration + per-class metrics
+  report.py   CLI verdict + OWASP tag + Mermaid graph
   cli.py      cyclops demo / cyclops attack
   proxy.py    external MCP proxy (stdio + Streamable HTTP)
   agent.py    Claude Agent SDK runner (live path)
   redteam.py  malicious MCP client self-test
-  servers/    filesystem / web / notify mock MCP servers
+  servers/    filesystem / web / notify / admin mock MCP servers
 ```
 
 ## Ship bar
 
-`ruff check` clean, `mypy --strict` clean, `pytest` green (22 tests), and the deterministic `cyclops demo` still BLOCKs the exfil in `prevent` mode and stays silent on `benign`. A change that breaks any of these does not ship.
+`ruff check` clean, `mypy --strict` clean, `pytest` green (45 tests), and the deterministic `cyclops demo` still BLOCKs the exfil in `prevent` mode, BLOCKs `excessive-agency`, and stays silent on `benign`. A change that breaks any of these does not ship.
 
 ## Testing vs. deploying
 
