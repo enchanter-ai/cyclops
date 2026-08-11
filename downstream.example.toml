@@ -1,0 +1,39 @@
+# cyclops downstream server map (template)
+#
+# Copy this file to downstream.toml and point CYCLOPS_DOWNSTREAM at it:
+#     export CYCLOPS_DOWNSTREAM=/etc/cyclops/downstream.toml
+#
+# Each [[server]] binds a REAL MCP server to one of cyclops' logical security
+# roles. The role name MUST be a member of the Server enum
+# (cyclops/enums/server.py): "web", "filesystem", "notify", "admin".
+#
+# The role — not the endpoint — drives detection. patterns.toml declares which
+# roles are untrusted / sensitive and which (role, tool) pairs are egress /
+# privileged. Bind your untrusted source to "web", your secret-bearing store to
+# "filesystem", your outbound channel to "notify", your privileged actuator to
+# "admin". No production endpoint is ever hard-coded in Python.
+#
+# transport = "stdio"  launches the server as a child process (command + args).
+# transport = "http"   connects to a Streamable-HTTP MCP endpoint (url).
+
+[[server]]
+name = "web"
+transport = "http"
+url = "https://web-mcp.internal.example/mcp"
+
+[[server]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/srv/agent/workspace"]
+
+[[server]]
+name = "notify"
+transport = "http"
+url = "https://notify-mcp.internal.example/mcp"
+
+[[server]]
+name = "admin"
+transport = "stdio"
+command = "python"
+args = ["-m", "your_org.admin_mcp"]
