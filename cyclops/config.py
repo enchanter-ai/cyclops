@@ -13,4 +13,3 @@ EGRESS = frozenset((Server(s), Tool(t)) for s, t in _data["egress"])
 PRIVILEGED = frozenset((Server(s), Tool(t)) for s, t in _data["privileged"])
 OWASP = {FlowClass(k): str(v) for k, v in _data["owasp"].items()}
 TOKEN = re.compile(_data["token_regex"])
-ROOT = next((p for p in Path(__file__).resolve().parents if (p / "pyproject.toml").exists()), Path.cwd())

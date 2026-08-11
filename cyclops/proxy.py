@@ -10,15 +10,17 @@ from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.streamable_http import streamable_http_client
 from mcp.server.lowlevel import Server as MCPServer
 from mcp.server.stdio import stdio_server
 from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.types import ContentBlock, TextContent
 from mcp.types import Tool as MCPTool
 
-from .config import EGRESS, PRIVILEGED
+from .config import EGRESS, OWASP, PRIVILEGED
 from .detector import Detector
-from .enums import Mode, Server, Tool
+from .downstream import Downstream, load
+from .enums import Mode, Server, Tool, Transport
 
 _SESSION = Path(os.environ.get("CYCLOPS_SESSION", "out/session.json"))
 
@@ -33,6 +35,16 @@ def _claim(owner: dict[str, Server], names: list[str], server: Server) -> None:
         if name in owner:
             raise ValueError(f"duplicate tool name across downstream servers: {name}")
         owner[name] = server
+
+async def _open(stack: AsyncExitStack, spec: Downstream) -> tuple[Any, Any]:
+    if spec.transport is Transport.STDIO:
+        assert spec.command is not None
+        params = StdioServerParameters(command=spec.command, args=list(spec.args), env=os.environ.copy())
+        read, write = await stack.enter_async_context(stdio_client(params))
+        return read, write
+    assert spec.url is not None
+    read, write, _ = await stack.enter_async_context(streamable_http_client(spec.url))
+    return read, write
 
 @contextlib.asynccontextmanager
 async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
@@ -62,17 +74,12 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
         return result.content
 
     async with AsyncExitStack() as stack:
-        for server in Server:
-            params = StdioServerParameters(
-                command=sys.executable,
-                args=["-m", f"cyclops.servers.{server.value}"],
-                env=os.environ.copy(),
-            )
-            read, write = await stack.enter_async_context(stdio_client(params))
+        for spec in load():
+            read, write = await _open(stack, spec)
             session = await stack.enter_async_context(ClientSession(read, write))
             await session.initialize()
-            sessions[server] = session
-            _claim(owner, [t.name for t in (await session.list_tools()).tools], server)
+            sessions[spec.server] = session
+            _claim(owner, [t.name for t in (await session.list_tools()).tools], spec.server)
         yield app, detector
 
 async def serve_stdio(mode: Mode = Mode.DETECT) -> None:
@@ -103,11 +110,19 @@ def serve_http(mode: Mode, host: str, port: int) -> None:
     uvicorn.run(star, host=host, port=port, log_level="warning")
 
 def _dump(detector: Detector) -> None:
-    path = detector.toxic_path()
+    flows = detector.flows()
     _SESSION.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "toxic": bool(path),
-        "chain": [{"server": c.server, "tool": c.tool, "taint": c.taint} for c in (path or [])],
+        "toxic": bool(flows),
+        "flows": [
+            {
+                "class": flow.cls.value,
+                "owasp": OWASP[flow.cls],
+                "chain": [{"server": c.server, "tool": c.tool, "taint": c.taint} for c in flow.chain],
+                "choke_point": {"server": flow.sink.server, "tool": flow.sink.tool},
+            }
+            for flow in flows
+        ],
         "leaked_bytes": detector.leak_bytes(),
         "metrics": detector.metrics.summary(),
     }
