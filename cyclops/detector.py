@@ -3,7 +3,7 @@ from typing import Any
 from .classify import classify
 from .enums import Mode, Server, Tool
 from .graph import ProvenanceGraph
-from .records import Metrics, ToolCall
+from .records import Flow, Metrics, ToolCall
 from .severity import leaked_bytes
 
 class Detector:
@@ -18,9 +18,12 @@ class Detector:
         call = ToolCall(f"c{self._seq}", server, tool, args, result, classify(server, tool, args, result))
         self.graph.add_call(call)
         self.metrics.observe(call.taint)
-        if call.is_egress and self.graph.find_toxic_path(call):
-            self.metrics.flag()
+        for flow in self.graph.find_toxic_flows(call):
+            self.metrics.flag(flow.cls)
         return call
+
+    def flows(self) -> list[Flow]:
+        return self.graph.find_toxic_flows()
 
     def toxic_path(self) -> list[ToolCall] | None:
         return self.graph.find_toxic_path()
@@ -33,7 +36,10 @@ class Detector:
         return sum(leaked_bytes(s.result, sink.args) for s in self.graph.sensitive_sources(sink))
 
     def blocks(self, call: ToolCall) -> bool:
-        if self.mode is Mode.PREVENT and call.is_egress and self.graph.find_toxic_path(call):
-            self.metrics.block()
-            return True
-        return False
+        if self.mode is not Mode.PREVENT:
+            return False
+        blocked = False
+        for flow in self.graph.find_toxic_flows(call):
+            self.metrics.block(flow.cls)
+            blocked = True
+        return blocked
