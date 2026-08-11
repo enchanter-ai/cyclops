@@ -3,4 +3,8 @@ sensitive_servers = ["filesystem"]
 sensitive_paths = [".ssh", "id_rsa", "id_ed25519", ".env", "credentials", ".aws"]
 secret_markers = ["PRIVATE KEY", "BEGIN OPENSSH", "aws_secret", "password=", "token="]
 egress = [["notify", "post"]]
+privileged = [["admin", "grant_access"]]
 token_regex = "[A-Za-z0-9_]{6,}"
+[owasp]
+exfiltration = "LLM02:2025 Sensitive Information Disclosure"
+excessive_agency = "LLM06:2025 Excessive Agency"
