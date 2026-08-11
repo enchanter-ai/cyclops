@@ -2,9 +2,9 @@ from typing import Any
 
 import networkx as nx
 
-from .enums import Taint
+from .enums import FlowClass, Taint
 from .overlap import shares, tokens
-from .records import ToolCall
+from .records import Flow, ToolCall
 
 class ProvenanceGraph:
     def __init__(self) -> None:
@@ -35,6 +35,27 @@ class ProvenanceGraph:
                 chain = nx.shortest_path(self._g, u.id, s.id) + nx.shortest_path(self._g, s.id, e.id)[1:]
                 return [by_id[n] for n in chain]
         return None
+
+    def find_excessive_agency_path(self, sink: ToolCall | None = None) -> list[ToolCall] | None:
+        by_id = {c.id: c for c in self._calls}
+        untrusted = [c for c in self._calls if c.taint is Taint.UNTRUSTED]
+        privileged = [sink] if sink is not None else [c for c in self._calls if c.is_privileged]
+        for u, p in ((u, p) for u in untrusted for p in privileged):
+            if nx.has_path(self._g, u.id, p.id):
+                return [by_id[n] for n in nx.shortest_path(self._g, u.id, p.id)]
+        return None
+
+    def find_toxic_flows(self, sink: ToolCall | None = None) -> list[Flow]:
+        flows: list[Flow] = []
+        if sink is None or sink.is_egress:
+            exfil = self.find_toxic_path(sink)
+            if exfil is not None:
+                flows.append(Flow(FlowClass.EXFILTRATION, exfil))
+        if sink is None or sink.is_privileged:
+            agency = self.find_excessive_agency_path(sink)
+            if agency is not None:
+                flows.append(Flow(FlowClass.EXCESSIVE_AGENCY, agency))
+        return flows
 
     def sensitive_sources(self, sink: ToolCall) -> list[ToolCall]:
         untrusted = [c.id for c in self._calls if c.taint is Taint.UNTRUSTED]
