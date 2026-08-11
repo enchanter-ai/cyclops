@@ -12,7 +12,7 @@ assignees: ""
 
 ## Repro
 
-<!-- Exact steps. Prefer a `cyclops demo` scenario or a recorded MCP trace. -->
+<!-- Exact steps. Prefer a minimal Detector tool-call sequence (see tests/) or a captured MCP trace. -->
 
 1.
 2.

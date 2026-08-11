@@ -18,7 +18,7 @@ Short version: **pick the right channel, and you'll get an answer faster.**
    - [README.md](README.md) — overview, install, what cyclops does, testing vs. deploying
    - [docs/architecture.md](docs/architecture.md) — dependency graph, file-by-file, runtime flows
    - [docs/differentiation.md](docs/differentiation.md) — what cyclops does differently, and honest credit
-3. **Reproduce it offline.** The `cyclops demo` command replays recorded traces deterministically with no network — the fastest way to isolate a detection issue.
+3. **Reproduce it deterministically.** Drive the `Detector` directly (as the tests in `tests/` do) — feed the tool-call sequence and assert on the flows. No network, no model, replayable — the fastest way to isolate a detection issue.
 4. **Narrow the case.** "It sometimes misses" is not reproducible. Minimize the failing trace.
 
 ## Response expectations

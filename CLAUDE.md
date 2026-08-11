@@ -12,9 +12,11 @@ Audience: Claude. Cyclops is a deterministic, model-free MCP proxy that detects 
 
 ## Layout
 
+This is the production core — only the MCP proxy and the model-free enforcement engine. No demo CLI, harness, or mock servers ship.
+
 ```
 cyclops/
-  enums/      Server, Tool, Taint, Mode, FlowClass
+  enums/      Server, Tool, Taint, Mode, FlowClass, Transport
   records/    ToolCall, Metrics, Flow (dataclasses)
   patterns.toml   detection data (untrusted / sensitive / egress / privileged / owasp)
   config.py   loads patterns.toml into typed constants
@@ -23,19 +25,19 @@ cyclops/
   graph.py    provenance graph + typed find_toxic_flows (exfil + excessive-agency)
   severity.py leak-volume in bytes
   detector.py detect / prevent orchestration + per-class metrics
-  report.py   CLI verdict + OWASP tag + Mermaid graph
-  cli.py      cyclops demo / cyclops attack
-  proxy.py    external MCP proxy (stdio + Streamable HTTP)
-  agent.py    Claude Agent SDK runner (live path)
-  redteam.py  malicious MCP client self-test
-  servers/    filesystem / web / notify / admin mock MCP servers
+  downstream.py   typed loader for the downstream-server map (stdio / Streamable HTTP)
+  proxy.py    external MCP proxy (stdio + Streamable HTTP) + session.json verdict
+downstream.example.toml   operator template binding real MCP servers to logical roles
 ```
+
+## Downstream servers
+
+The proxy is config-driven. `downstream.toml` (path via `CYCLOPS_DOWNSTREAM`, default `downstream.toml`) declares the real MCP servers the proxy fronts. Each `[[server]]` binds one logical `Server` role (`web` / `filesystem` / `notify` / `admin`) to a `stdio` command or a Streamable-`http` URL. The role — not the endpoint — drives detection: `patterns.toml` classifies by role. No production endpoint is ever hard-coded in Python. Ship template: `downstream.example.toml`.
 
 ## Ship bar
 
-`ruff check` clean, `mypy --strict` clean, `pytest` green (45 tests), and the deterministic `cyclops demo` still BLOCKs the exfil in `prevent` mode, BLOCKs `excessive-agency`, and stays silent on `benign`. A change that breaks any of these does not ship.
+`ruff check` clean, `mypy --strict` clean, `pytest` green. Detection behavior for both flow classes is proven by the Detector-level tests (`tests/test_detector.py`, `tests/test_flow_engine.py`). A change that breaks any of these does not ship.
 
-## Testing vs. deploying
+## Production output
 
-- **Test on a workstation** → the CLI (`cyclops demo`, `cyclops attack`) — offline, deterministic, no agent wiring.
-- **Deploy** → wire the MCP proxy (`cyclops.proxy`) into an agent host over stdio or Streamable HTTP. That is the product.
+Each proxied session writes `out/session.json` (path via `CYCLOPS_SESSION`): the structured verdict — `toxic`, per-class `flows` (class + OWASP tag + chain + choke-point), `leaked_bytes`, and `metrics`. That is the product's machine-readable output; wire it to a store / SIEM.

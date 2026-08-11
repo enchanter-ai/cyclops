@@ -69,7 +69,9 @@ visibly defeating the encoding legacy tooling can't see. It matches Bloom's own
 launch thesis ("the same tool can be acceptable on one endpoint and high-risk on
 another") but proves it at **runtime with data-flow evidence**.
 
-`cyclops demo --scenario poisoned-encoded` is that moment, reproducibly.
+At runtime the proxy fronts the real MCP servers declared in `downstream.toml`, taps
+the encoded-exfil chain live, denies it in `prevent` mode, and writes the byte-scored,
+choke-point-named verdict to `out/session.json` — the reproducible product moment.
 
 ## Coverage gaps to name proactively (credibility, not weakness)
 

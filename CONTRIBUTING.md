@@ -2,7 +2,7 @@
 
 ## Stack
 
-Python ≥ 3.11. Runtime dependencies are exactly two: `mcp` and `networkx`. The live path adds `claude-agent-sdk` + `anyio` (optional extra). No other runtime deps — keep it that way.
+Python ≥ 3.11. Runtime dependencies are exactly two: `mcp` and `networkx`. Serving the proxy over Streamable HTTP adds `uvicorn` + `starlette` (the optional `http` extra). No other runtime deps — keep it that way.
 
 ## House style — enforced by tests
 

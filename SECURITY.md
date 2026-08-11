@@ -13,7 +13,7 @@ We treat reports confidentially. We will acknowledge receipt within 72 hours and
 
 A good report has:
 
-- A clear, reproducible proof-of-concept (ideally a recorded MCP trace or a `cyclops attack` scenario).
+- A clear, reproducible proof-of-concept (ideally a minimal `Detector` tool-call sequence, as in `tests/`, or a captured MCP trace).
 - The exact module, transport (stdio / Streamable HTTP), and mode (`detect` / `prevent`) involved.
 - The version you observed the issue in (`pip show cyclops`).
 - Impact assessment: what can an attacker do, and under what preconditions.

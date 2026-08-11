@@ -7,19 +7,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
-- **Multi-class flow rule engine.** The single hard-coded trifecta is generalized into a typed engine. `FlowClass` enum (`EXFILTRATION`, `EXCESSIVE_AGENCY`); `graph.find_toxic_flows()` returns typed `Flow` records (class + ordered chain) with a targeted per-sink variant; `report.py` prints the class and its OWASP tag next to the verdict; `Metrics` counts flags per class.
+- **Config-driven downstream server map.** The proxy no longer hard-codes downstream servers. `downstream.py` loads a typed `downstream.toml` (path via `CYCLOPS_DOWNSTREAM`) that binds each real MCP server to a logical `Server` role over `stdio` (command + args) or Streamable `http` (url); a new `Transport` enum types the transport. Classification stays role-driven via `patterns.toml` — no production endpoint is hard-coded in Python. Ships `downstream.example.toml` as an operator template.
+- **Structured `session.json` verdict** now emits one entry per toxic flow **class** — each with its OWASP tag, ordered chain, and named `choke_point` — plus `leaked_bytes` and per-class `metrics`. This replaces the human-rendered report as the product's machine-readable output.
+
+### Removed
+- **Harness, demo, and mock servers.** The production core drops `cli.py` (`cyclops demo` / `cyclops attack`), `report.py`, `agent.py`, `redteam.py`, the `servers/` mock MCP servers, and the `scenarios/` · `recordings/` · `sandbox/` fixtures — along with their harness-only tests. The `cyclops` console script now launches the proxy (`cyclops.proxy:main`); the `live` extra is replaced by an `http` extra (uvicorn + starlette). Detection behavior for both flow classes is unchanged and proven by the Detector-level tests.
+
+### Added (flow engine)
+- **Multi-class flow rule engine.** The single hard-coded trifecta is generalized into a typed engine. `FlowClass` enum (`EXFILTRATION`, `EXCESSIVE_AGENCY`); `graph.find_toxic_flows()` returns typed `Flow` records (class + ordered chain) with a targeted per-sink variant; the `session.json` verdict carries the class and its OWASP tag; `Metrics` counts flags per class.
 - **`EXCESSIVE_AGENCY` flow class** (`untrusted → privileged action`, no sensitive read) — an untrusted source reaching a privileged `(server, tool)` sink whose arguments derive from the untrusted content. `EXFILTRATION` remains an untouched subset of the same graph. OWASP LLM Top 10 (2025) tags carried as data in `patterns.toml` (`LLM06:2025` / `LLM02:2025`).
-- **Privileged action model.** A `privileged` `(server, tool)` table in `patterns.toml` (mirroring `egress`), loaded by `config.py`; an `is_privileged` property on `ToolCall` (mirroring `is_egress`). A mock `admin` server with a harmless `grant_access` action, an `excessive-agency` scenario + recorded trace, and regression tests (detection, targeted blocking, benign-not-flagged, agency-without-exfil, OWASP tag).
+- **Privileged action model.** A `privileged` `(server, tool)` table in `patterns.toml` (mirroring `egress`), loaded by `config.py`; an `is_privileged` property on `ToolCall` (mirroring `is_egress`); and Detector-level regression tests (detection, targeted blocking, benign-not-flagged, agency-without-exfil, OWASP tag).
 - Tier-1 governance docs: `LICENSE`, `SECURITY.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `CITATION.cff`, `CLAUDE.md`.
 - `.github/` scaffold: CI workflow (ruff + mypy + pytest on 3.11/3.12), issue templates, PR template, `CODEOWNERS`, dependabot config.
 - Package metadata in `pyproject.toml`: license, authors, keywords, classifiers, project URLs.
 
 ### Fixed
 - **Sticky toxic path**: `feed()` / `blocks()` now target the specific egress call that closes a toxic path, so a later unrelated egress is no longer flagged/blocked because an older toxic path exists.
-- **Demo `prevent`**: the offline demo now invokes `blocks()` on egress like the live proxy, so `metrics.blocked` is real and the verdict verb reflects an actual block rather than the selected mode.
 - **Hex + bounded nested decoding**: `overlap.py` now unmasks hex (as advertised) and normalizes bounded nested encodings (base64/hex, depth-limited, deduplicated).
 - **Tool-name collisions**: the proxy fails fast on duplicate downstream tool names instead of silently overwriting the owner mapping.
-- **Sandbox containment**: the mock filesystem server uses `Path.is_relative_to` instead of a string-prefix check (rejects sibling paths that share the prefix).
 - **HTTP `session.json`**: the Streamable-HTTP path now writes `session.json` at server shutdown.
 
 ### Changed
@@ -27,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Known limitations (roadmap)
 - HTTP transport is single-tenant (one detector per process); per-client session isolation is deferred — prefer stdio for multi-tenant isolation.
-- Downstream servers are enum-driven; a generic external-server configuration surface is deferred.
+- Downstream roles are the fixed `Server` enum vocabulary (`web` / `filesystem` / `notify` / `admin`); real servers bind to a role in `downstream.toml`. A dynamic, arbitrary-role vocabulary is deferred.
 - Non-text MCP content types are not fed to provenance (documented; the model-free constraint forbids semantic interpretation).
 - `find_toxic_path` returns the first toxic path (each segment shortest), not a globally-ranked choke-point.
 

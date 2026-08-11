@@ -9,7 +9,7 @@
   <a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/enchanter-ai/cyclops/ci.yml?branch=main&style=for-the-badge"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-58a6ff?style=for-the-badge">
   <img alt="6 algorithms" src="https://img.shields.io/badge/Algorithms-6-bc8cff?style=for-the-badge">
-  <img alt="36 tests" src="https://img.shields.io/badge/Tests-36-8957e5?style=for-the-badge">
+  <img alt="42 tests" src="https://img.shields.io/badge/Tests-42-8957e5?style=for-the-badge">
   <img alt="Zero LLM calls in the decision path" src="https://img.shields.io/badge/LLM_in_decision_path-0-f85149?style=for-the-badge">
   <a href="https://www.repostatus.org/#active"><img alt="Project Status: Active" src="https://www.repostatus.org/badges/latest/active.svg"></a>
 </p>
@@ -86,8 +86,8 @@ Not for:
 | **Runtime dependencies** | 2 (`mcp`, `networkx`) |
 | **Transports** | 2 (stdio, Streamable HTTP) |
 | **Modes** | 2 (detect, prevent) |
-| **Tests** | 36 |
-| **Lines of Python** | 555 |
+| **Tests** | 42 |
+| **Lines of Python** | 510 |
 | **Python** | 3.11+ |
 
 A complete toxic-flow detector in ~500 lines, with nothing hardcoded and no model in the loop.
@@ -183,75 +183,92 @@ flowchart TB
 ## Install
 
 ```sh
-git clone https://github.com/enchanter-ai/cyclops
-cd cyclops
-pip install -e .
+pip install cyclops
 ```
 
-Editable from a clone because `demo` replays the **bundled** traces in `recordings/`. Runtime needs only `mcp` and `networkx`. The live path (a real Claude agent) is an optional extra:
+Runtime needs only `mcp` and `networkx`. Serving the proxy over Streamable HTTP adds an optional extra; the test toolchain is another:
 
 ```sh
-pip install -e ".[live]"   # adds claude-agent-sdk + anyio
-pip install -e ".[dev]"    # adds pytest + ruff + mypy
+pip install "cyclops[http]"   # adds uvicorn + starlette for --http serving
+pip install "cyclops[dev]"    # adds pytest + ruff + mypy
 ```
 
 ## Quickstart
 
-The `demo` command replays a recorded trace through the detector — fully offline, deterministic, no network, no model. Run it from the repo root.
+cyclops runs as an external MCP proxy in front of your real MCP servers. Declare those servers in a `downstream.toml` — copy the shipped template and edit it:
 
 ```sh
-cyclops demo --scenario poisoned                   # toxic flow flagged
-cyclops demo --scenario poisoned-encoded           # base64 exfil, still caught
-cyclops demo --scenario poisoned --mode prevent    # egress denied
-cyclops demo --scenario benign                     # stays silent
-cyclops attack                                     # malicious client vs the live gateway
+cp downstream.example.toml downstream.toml
+export CYCLOPS_DOWNSTREAM=./downstream.toml
 ```
 
-**Testing locally vs. deploying** — these are different axes:
+Each `[[server]]` binds a real MCP server to one of cyclops' logical security **roles** (`web`, `filesystem`, `notify`, `admin`) over `stdio` (command + args) or Streamable `http` (url):
 
-- **Test on your workstation** → the **CLI** (`cyclops demo`, `cyclops attack`): offline, deterministic, no agent wiring. Not part of the MCP interface.
-- **Deploy** → wire the **MCP proxy** (`cyclops.proxy`) into an agent host, over **stdio** (Claude Desktop / Cursor launch it as a child process) or over **Streamable HTTP** (`python -m cyclops.proxy --http`, network-reachable — single-tenant / experimental: one detector per process, so prefer stdio for isolated multi-tenant use, and per-session isolation is roadmap). That is the product.
+```toml
+[[server]]
+name = "web"
+transport = "http"
+url = "https://web-mcp.internal.example/mcp"
+
+[[server]]
+name = "filesystem"
+transport = "stdio"
+command = "npx"
+args = ["-y", "@modelcontextprotocol/server-filesystem", "/srv/agent/workspace"]
+```
+
+The **role** — not the endpoint — drives detection: `patterns.toml` declares which roles are untrusted / sensitive and which `(role, tool)` pairs are egress / privileged. No production endpoint is ever hard-coded in Python.
+
+Then point your agent host at the proxy:
+
+- **stdio** — Claude Desktop / Cursor launch `cyclops` (or `python -m cyclops.proxy`) as a child process.
+- **Streamable HTTP** — `python -m cyclops.proxy --http` (network-reachable — single-tenant / experimental: one detector per process, so prefer stdio for isolated multi-tenant use; per-session isolation is roadmap).
+
+Set `CYCLOPS_MODE=prevent` to deny toxic sinks instead of only flagging them. Each session writes its verdict to `out/session.json` (path via `CYCLOPS_SESSION`).
 
 ## The Modules
 
-The **enforcement path** is `proxy.py → detector.py → {classify · overlap · graph · severity}` over the vocabulary. Everything else is harness (dev / demo / fixtures) — in production the mock servers are replaced by real MCP tool servers and reporting goes to a store / SIEM.
+The **enforcement path** is `proxy.py → detector.py → {classify · overlap · graph · severity}` over the vocabulary. This is the production core — every module ships; there is no harness, demo CLI, or mock server. The proxy connects the real MCP servers declared in `downstream.toml` and writes the verdict to `out/session.json` for a store / SIEM.
 
-| Module | Role | Path? |
-|--------|------|-------|
-| `enums/` | Typed vocabulary — Server, Tool, Taint, Mode | product |
-| `records/` | `ToolCall`, `Metrics` dataclasses | product |
-| `patterns.toml` | All detection data — nothing hardcoded in code | product |
-| `config.py` | Loads `patterns.toml` into typed constants | product |
-| `classify.py` | C1 taint classification | product |
-| `overlap.py` | C3 encoding-unmask + token matching | product |
-| `graph.py` | C2 provenance graph + toxic-path search | product |
-| `severity.py` | C4 leak-volume in bytes | product |
-| `detector.py` | C5/C6 orchestration, detect/prevent, metrics | product |
-| `proxy.py` | External MCP proxy (stdio + Streamable HTTP) | product |
-| `report.py` | Verdict + Mermaid graph rendering | harness |
-| `cli.py` | `cyclops demo` / `cyclops attack` | harness |
-| `agent.py` | Live-path Claude Agent SDK runner | harness |
-| `redteam.py` | Malicious MCP client self-test | harness |
-| `servers/` | Mock filesystem / web / notify MCP servers | harness |
+| Module | Role |
+|--------|------|
+| `enums/` | Typed vocabulary — Server, Tool, Taint, Mode, FlowClass, Transport |
+| `records/` | `ToolCall`, `Metrics`, `Flow` dataclasses |
+| `patterns.toml` | All detection data — nothing hardcoded in code |
+| `config.py` | Loads `patterns.toml` into typed constants |
+| `classify.py` | C1 taint classification |
+| `overlap.py` | C3 encoding-unmask + token matching |
+| `graph.py` | C2 provenance graph + typed toxic-flow search (exfil + excessive-agency) |
+| `severity.py` | C4 leak-volume in bytes |
+| `detector.py` | C5/C6 orchestration, detect/prevent, per-class metrics |
+| `downstream.py` | Typed loader for `downstream.toml` — binds real MCP servers to logical roles |
+| `proxy.py` | External MCP proxy (stdio + Streamable HTTP) + `session.json` verdict |
 
 ## What You Get Per Run
 
-In deployment, each proxied session writes `out/session.json` — the machine-readable verdict:
+Each proxied session writes `out/session.json` (path via `CYCLOPS_SESSION`) — the machine-readable verdict, one entry per toxic flow class, each tagged with its OWASP LLM Top 10 (2025) code and named choke-point:
 
 ```json
 {
   "toxic": true,
-  "chain": [
-    {"server": "web", "tool": "fetch_url", "taint": "untrusted"},
-    {"server": "filesystem", "tool": "read_file", "taint": "sensitive"},
-    {"server": "notify", "tool": "post", "taint": "normal"}
+  "flows": [
+    {
+      "class": "exfiltration",
+      "owasp": "LLM02:2025 Sensitive Information Disclosure",
+      "chain": [
+        {"server": "web", "tool": "fetch_url", "taint": "untrusted"},
+        {"server": "filesystem", "tool": "read_file", "taint": "sensitive"},
+        {"server": "notify", "tool": "post", "taint": "normal"}
+      ],
+      "choke_point": {"server": "notify", "tool": "post"}
+    }
   ],
   "leaked_bytes": 47,
-  "metrics": {"calls": 3, "flagged": 1, "blocked": 1, "taint": {"untrusted": 1, "sensitive": 1, "normal": 1}}
+  "metrics": {"calls": 3, "flagged": 1, "blocked": 1, "taint": {"untrusted": 1, "sensitive": 1, "normal": 1}, "flows": {"exfiltration": 1}}
 }
 ```
 
-The CLI (`report.py`) renders the same result human-readably: a green/red verdict, the chain, the leaked-byte count, the named choke-point, and a Mermaid graph of the session.
+The `choke_point` is the single `(server, tool)` capability to remove to break the flow; `leaked_bytes` is the distinctive secret-token volume that reached the egress attempt.
 
 ## Roadmap
 
@@ -310,7 +327,7 @@ The count of distinctive secret-token bytes that reached the egress **attempt** 
 
 ### C5 — Choke-Point
 
-The egress node `e` terminating the toxic path is the single capability to remove — dropping `(e.server, e.tool)` breaks every flow through it. → `detector.py` / `report.py`
+The egress node `e` terminating the toxic path is the single capability to remove — dropping `(e.server, e.tool)` breaks every flow through it. Emitted as `choke_point` in `session.json`. → `detector.py` / `proxy.py`
 
 ### C6 — Detect / Prevent Policy
 
@@ -323,7 +340,7 @@ prevent : deny(call)          if is_egress(call) ∧ toxic(G)
 
 ---
 
-*Every formula above is exercised by the test suite and the offline `demo`.*
+*Every formula above is exercised by the test suite.*
 
 ## vs Everything Else
 
@@ -375,14 +392,14 @@ flowchart BT
     severity["severity.py"]:::core
     detector["detector.py"]:::core
   end
-  subgraph IO["Transport & Reporting"]
+  subgraph IO["Transport & Config"]
+    downstream["downstream.py"]:::io
     proxy["proxy.py"]:::io
-    report["report.py"]:::io
-    cli["cli.py"]:::io
-    servers["servers/"]:::io
   end
   CORE --> VOC
-  IO --> CORE
+  downstream --> VOC
+  proxy --> CORE
+  proxy --> downstream
 ```
 
 A file-by-file map with runtime flows lives in [docs/architecture.md](docs/architecture.md).
@@ -393,18 +410,18 @@ A file-by-file map with runtime flows lives in [docs/architecture.md](docs/archi
 pytest
 ```
 
-36 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
+42 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
 
 - Taint classification (4)
 - Encoding-unmask overlap — base64, hex, nested (6)
 - Leak-volume severity (4)
 - Detector detect / prevent, targeted blocking, leak aggregation (8)
-- Offline demo replay + prevent/detect blocking (6)
+- Flow engine — typed exfil vs. excessive-agency, OWASP tags, per-class blocking (9)
+- Downstream config loader — role binding, transport validation, template (8)
 - Proxy tool-name collision handling (2)
-- Sandbox path containment (3)
 - House-style guard — no comments, no double blank lines (3)
 
-The **detection smoke** CI step additionally asserts that `prevent` blocks the exfil and `benign` stays silent.
+The **downstream config smoke** CI step additionally asserts the shipped template parses to every logical role.
 
 ## Acknowledgments
 
@@ -414,7 +431,6 @@ cyclops builds on work by others:
 - **[Simon Willison](https://simonwillison.net/)** — the *"lethal trifecta"* framing (untrusted input + private data + exfil).
 - **[Model Context Protocol](https://modelcontextprotocol.io/)** — the tool boundary cyclops fronts.
 - **[NetworkX](https://networkx.org/)** — the directed-graph engine behind C2.
-- **[Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)** — the optional live-path runner.
 - **[Keep a Changelog](https://keepachangelog.com/)**, **[Semantic Versioning](https://semver.org/)**, **[Contributor Covenant](https://www.contributor-covenant.org/)**, **[repostatus.org](https://www.repostatus.org/)**, **[Citation File Format](https://citation-file-format.github.io/)**, **[Conventional Commits](https://www.conventionalcommits.org/)** — project conventions.
 
 ## Versioning & release cadence

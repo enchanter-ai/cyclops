@@ -28,11 +28,8 @@ flowchart TD
     detector["detector.py — feed / toxic_path / blocks / metrics"]
   end
   subgraph L5["surfaces"]
-    report["report.py"]
-    cli["cli.py — cyclops demo"]
-    proxy["proxy.py — live MCP tap"]
-    agent["agent.py — live Claude runner"]
-    servers["servers/ — filesystem·web·notify"]
+    downstream["downstream.py — server map loader"]
+    proxy["proxy.py — live MCP tap + session.json"]
   end
   config --> enums
   overlap --> config
@@ -48,13 +45,10 @@ flowchart TD
   detector --> graph
   detector --> severity
   detector --> records
-  report --> detector
-  cli --> detector
-  cli --> report
+  downstream --> enums
   proxy --> detector
   proxy --> config
-  agent --> enums
-  servers --> enums
+  proxy --> downstream
 ```
 
 ## File by file
@@ -71,35 +65,21 @@ flowchart TD
 | `severity.py` | distinctive secret-token bytes reaching the sink (aggregated per sink) | overlap |
 | `graph.py` | provenance DiGraph; `find_toxic_path()` = untrusted→sensitive→egress | overlap, records, enums |
 | `detector.py` | **hub** — `feed` / `toxic_path` / `leak_bytes` / `blocks`, holds graph + metrics | classify, graph, severity, records |
-| `report.py` | renders verdict + leak + choke-point + Mermaid | detector |
-| `cli.py` | `cyclops demo` — replays a recording through the detector | detector, report |
-| `proxy.py` | external MCP proxy: taps real tool calls, detect or prevent | detector, config |
-| `agent.py` | drives a real Claude agent through the proxy (live capture) | claude-agent-sdk |
-| `servers/` | 3 mock MCP tool servers | enums |
+| `downstream.py` | typed loader for `downstream.toml` — binds real MCP servers to logical roles | enums |
+| `proxy.py` | external MCP proxy: connects the declared servers, taps calls, detect or prevent, writes `session.json` | detector, config, downstream |
 
-## Runtime flow — offline demo (`cyclops demo`)
+## Runtime flow — live (`cyclops` / `python -m cyclops.proxy`)
 
 ```
-cli → reads recordings/<scenario>.jsonl
-    → detector.feed(each call)
-         → classify()          taint: web=untrusted, key-read=sensitive
-         → graph.add_call()    overlap decides "derives-from" edges (base64-aware)
-    → detector.toxic_path()    graph search: untrusted → sensitive → egress
-    → detector.leak_bytes()    severity
-    → report.render()          RED/GREEN + Mermaid
+downstream.py → reads downstream.toml (CYCLOPS_DOWNSTREAM)
+             → proxy connects each declared server (stdio or Streamable HTTP)
+MCP agent → proxy.py (MCP) → real downstream tool servers
+                 │ taps every call → detector (the hub)
+                 │      → classify()      taint: web=untrusted, key-read=sensitive
+                 │      → graph.add_call() overlap decides derives-from edges (base64-aware)
+                 └ detect: flag  |  prevent: deny the egress/privileged sink before it fires
+             → out/session.json (per-class flows + OWASP tag + leaked bytes + metrics)
 ```
-
-## Runtime flow — live (`python -m cyclops.agent`)
-
-```
-Claude agent → proxy.py (MCP) → servers/ (real tool calls)
-                   │ taps every call → detector (same hub)
-                   └ detect: flag   |   prevent: deny the egress before it leaves
-              → out/session.json (verdict + leaked bytes + metrics)
-```
-
-Same `detector` brain in both paths; only the source of calls differs — a recorded
-file vs a live agent through the proxy.
 
 ## Detection in four steps
 
