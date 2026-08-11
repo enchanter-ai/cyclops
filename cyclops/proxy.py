@@ -16,7 +16,7 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.types import ContentBlock, TextContent
 from mcp.types import Tool as MCPTool
 
-from .config import EGRESS
+from .config import EGRESS, PRIVILEGED
 from .detector import Detector
 from .enums import Mode, Server, Tool
 
@@ -26,7 +26,7 @@ def _text(content: list[ContentBlock]) -> str:
     return "".join(c.text for c in content if isinstance(c, TextContent))
 
 def _blocked() -> list[ContentBlock]:
-    return [TextContent(type="text", text="cyclops blocked this call: toxic flow untrusted -> sensitive -> egress")]
+    return [TextContent(type="text", text="cyclops blocked this call: toxic flow detected before the sink")]
 
 def _claim(owner: dict[str, Server], names: list[str], server: Server) -> None:
     for name in names:
@@ -52,7 +52,7 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
     @app.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[ContentBlock]:
         server, tool = owner[name], Tool(name)
-        if (server, tool) in EGRESS:
+        if (server, tool) in EGRESS or (server, tool) in PRIVILEGED:
             call = detector.feed(server, tool, arguments, "")
             if detector.blocks(call):
                 return _blocked()

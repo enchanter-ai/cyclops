@@ -15,7 +15,7 @@ def demo(scenario: str, mode: Mode) -> str:
     detector = Detector(mode)
     for record in _load(scenario):
         call = detector.feed(Server(record["server"]), Tool(record["tool"]), record["args"], record["result"])
-        if call.is_egress:
+        if call.is_egress or call.is_privileged:
             detector.blocks(call)
     return render(detector)
 
