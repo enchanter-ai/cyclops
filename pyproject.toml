@@ -29,11 +29,11 @@ Issues = "https://github.com/enchanter-ai/cyclops/issues"
 Changelog = "https://github.com/enchanter-ai/cyclops/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-live = ["claude-agent-sdk>=0.1", "anyio>=4.0"]
+http = ["uvicorn>=0.30", "starlette>=0.37"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
 
 [project.scripts]
-cyclops = "cyclops.cli:main"
+cyclops = "cyclops.proxy:main"
 
 [tool.hatch.build.targets.wheel]
 include = ["cyclops"]
@@ -54,7 +54,7 @@ python_version = "3.11"
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["networkx.*", "claude_agent_sdk.*"]
+module = ["networkx.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

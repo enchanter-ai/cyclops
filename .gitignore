@@ -19,8 +19,8 @@ htmlcov/
 Thumbs.db
 .idea/
 .vscode/
-recordings/*.local.json
 out/
+downstream.toml
 *.svg.tmp
 graphify-out/
 .ua/

@@ -32,8 +32,5 @@ jobs:
         run: mypy cyclops
       - name: Pytest
         run: pytest -q
-      - name: Detection smoke (prevent blocks, benign silent)
-        run: |
-          cyclops demo --scenario poisoned --mode prevent
-          cyclops demo --scenario poisoned-encoded --mode prevent
-          cyclops demo --scenario benign
+      - name: Downstream config smoke (template parses to all roles)
+        run: python -c "from cyclops.downstream import load; from cyclops.enums import Server; assert {s.server for s in load('downstream.example.toml')} == set(Server)"
