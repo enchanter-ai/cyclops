@@ -2,13 +2,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..config import EGRESS, PRIVILEGED
-from ..enums import Server, Taint, Tool
+from ..enums import Server, Taint
 
 @dataclass(frozen=True, slots=True)
 class ToolCall:
     id: str
     server: Server
-    tool: Tool
+    tool: str
     args: dict[str, Any]
     result: str
     taint: Taint

@@ -20,7 +20,7 @@ from mcp.types import Tool as MCPTool
 from .config import EGRESS, OWASP, PRIVILEGED
 from .detector import Detector
 from .downstream import Downstream, load
-from .enums import Mode, Server, Tool, Transport
+from .enums import Mode, Server, Transport
 
 _SESSION = Path(os.environ.get("CYCLOPS_SESSION", "out/session.json"))
 
@@ -63,7 +63,7 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[ContentBlock]:
-        server, tool = owner[name], Tool(name)
+        server, tool = owner[name], name
         if (server, tool) in EGRESS or (server, tool) in PRIVILEGED:
             call = detector.feed(server, tool, arguments, "")
             if detector.blocks(call):

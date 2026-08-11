@@ -1,9 +1,9 @@
 from typing import Any
 
 from .config import SECRET_MARKERS, SENSITIVE_PATHS, SENSITIVE_SERVERS, UNTRUSTED_SERVERS
-from .enums import Server, Taint, Tool
+from .enums import Server, Taint
 
-def classify(server: Server, tool: Tool, args: dict[str, Any], result: str) -> Taint:
+def classify(server: Server, tool: str, args: dict[str, Any], result: str) -> Taint:
     if server in UNTRUSTED_SERVERS:
         return Taint.UNTRUSTED
     if server in SENSITIVE_SERVERS and _is_secret(str(args.get("path", "")), result):

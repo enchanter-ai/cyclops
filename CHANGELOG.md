@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 - **Config-driven downstream server map.** The proxy no longer hard-codes downstream servers. `downstream.py` loads a typed `downstream.toml` (path via `CYCLOPS_DOWNSTREAM`) that binds each real MCP server to a logical `Server` role over `stdio` (command + args) or Streamable `http` (url); a new `Transport` enum types the transport. Classification stays role-driven via `patterns.toml` — no production endpoint is hard-coded in Python. Ships `downstream.example.toml` as an operator template.
+- **Arbitrary real tool names.** The proxy no longer assumed downstream tools were one of four enum values (`Tool(name)` would have raised on a real server). `ToolCall.tool` / `Detector.feed` / `classify` now carry the raw tool name; the `Tool` enum stays as the declared egress / privileged **sink** vocabulary, matched by name via `StrEnum` equality. Non-sink tools pass through, still tapped for provenance. Detection behavior for both flow classes is unchanged (proven by the existing Detector-level tests, plus two new arbitrary-tool-name regressions).
 - **Structured `session.json` verdict** now emits one entry per toxic flow **class** — each with its OWASP tag, ordered chain, and named `choke_point` — plus `leaked_bytes` and per-class `metrics`. This replaces the human-rendered report as the product's machine-readable output.
 
 ### Removed

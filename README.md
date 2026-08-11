@@ -9,7 +9,7 @@
   <a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/enchanter-ai/cyclops/ci.yml?branch=main&style=for-the-badge"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-58a6ff?style=for-the-badge">
   <img alt="6 algorithms" src="https://img.shields.io/badge/Algorithms-6-bc8cff?style=for-the-badge">
-  <img alt="42 tests" src="https://img.shields.io/badge/Tests-42-8957e5?style=for-the-badge">
+  <img alt="44 tests" src="https://img.shields.io/badge/Tests-44-8957e5?style=for-the-badge">
   <img alt="Zero LLM calls in the decision path" src="https://img.shields.io/badge/LLM_in_decision_path-0-f85149?style=for-the-badge">
   <a href="https://www.repostatus.org/#active"><img alt="Project Status: Active" src="https://www.repostatus.org/badges/latest/active.svg"></a>
 </p>
@@ -86,7 +86,7 @@ Not for:
 | **Runtime dependencies** | 2 (`mcp`, `networkx`) |
 | **Transports** | 2 (stdio, Streamable HTTP) |
 | **Modes** | 2 (detect, prevent) |
-| **Tests** | 42 |
+| **Tests** | 44 |
 | **Lines of Python** | 510 |
 | **Python** | 3.11+ |
 
@@ -217,7 +217,7 @@ command = "npx"
 args = ["-y", "@modelcontextprotocol/server-filesystem", "/srv/agent/workspace"]
 ```
 
-The **role** — not the endpoint — drives detection: `patterns.toml` declares which roles are untrusted / sensitive and which `(role, tool)` pairs are egress / privileged. No production endpoint is ever hard-coded in Python.
+The **role** — not the endpoint — drives detection: `patterns.toml` declares which roles are untrusted / sensitive and which `(role, tool)` pairs are egress / privileged. No production endpoint is ever hard-coded in Python. Downstream servers may expose **any** tool names; cyclops matches each against the enum-declared sink vocabulary, so a tool that is not a declared egress / privileged sink passes through — still tapped for provenance, never a false sink.
 
 Then point your agent host at the proxy:
 
@@ -410,12 +410,12 @@ A file-by-file map with runtime flows lives in [docs/architecture.md](docs/archi
 pytest
 ```
 
-42 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
+44 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
 
 - Taint classification (4)
 - Encoding-unmask overlap — base64, hex, nested (6)
 - Leak-volume severity (4)
-- Detector detect / prevent, targeted blocking, leak aggregation (8)
+- Detector detect / prevent, targeted blocking, leak aggregation, arbitrary real tool names (10)
 - Flow engine — typed exfil vs. excessive-agency, OWASP tags, per-class blocking (9)
 - Downstream config loader — role binding, transport validation, template (8)
 - Proxy tool-name collision handling (2)
