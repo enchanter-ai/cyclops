@@ -1,14 +1,18 @@
+from .config import OWASP
 from .detector import Detector
+from .enums import FlowClass
 
 def render(detector: Detector) -> str:
-    path = detector.toxic_path()
+    flows = detector.flows()
     lines = []
-    if path:
+    if flows:
         verb = "BLOCKED" if detector.metrics.blocked else "FLAGGED"
-        lines.append(f"[RED] TOXIC FLOW {verb}")
-        lines.append("  " + " -> ".join(f"{c.server}:{c.tool} ({c.taint})" for c in path))
-        lines.append(f"  leaked: ~{detector.leak_bytes()} bytes of distinctive secret tokens reached egress")
-        lines.append(f"  choke point: remove {path[-1].server}:{path[-1].tool} to break this flow")
+        for flow in flows:
+            lines.append(f"[RED] {flow.cls.name} {verb} (OWASP {OWASP[flow.cls]})")
+            lines.append("  " + " -> ".join(f"{c.server}:{c.tool} ({c.taint})" for c in flow.chain))
+            if flow.cls is FlowClass.EXFILTRATION:
+                lines.append(f"  leaked: ~{detector.leak_bytes()} bytes of distinctive secret tokens reached egress")
+            lines.append(f"  choke point: remove {flow.sink.server}:{flow.sink.tool} to break this flow")
     else:
         lines.append("[GREEN] no toxic flow")
     lines.append(f"  metrics: {detector.metrics.summary()}")
@@ -17,7 +21,7 @@ def render(detector: Detector) -> str:
     return "\n".join(lines)
 
 def mermaid(detector: Detector) -> str:
-    toxic = {c.id for c in (detector.toxic_path() or [])}
+    toxic = {c.id for flow in detector.flows() for c in flow.chain}
     out = ["flowchart LR"]
     for call in detector.graph.calls:
         suffix = ":::toxic" if call.id in toxic else ""
