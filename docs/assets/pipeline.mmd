@@ -1,0 +1,79 @@
+---
+title: Cyclops toxic-flow detection pipeline
+config:
+  look: neo
+  theme: dark
+  flowchart:
+    curve: basis
+    padding: 18
+    nodeSpacing: 44
+    rankSpacing: 54
+    htmlLabels: true
+    subGraphTitleMargin:
+      top: 14
+      bottom: 18
+---
+flowchart TB
+    TitleBlock["<div style='font-family:ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center;min-width:940px;padding:6px 10px;line-height:1.8'><div style='color:#58a6ff;font-size:15px;letter-spacing:6px;border-bottom:1px solid #1e3a5f;padding-bottom:10px;margin-bottom:10px'>CYCLOPS &nbsp;·&nbsp; TOXIC-FLOW&nbsp;DETECTION &nbsp;·&nbsp; ARCHITECTURE</div><div style='display:flex;gap:40px;justify-content:center;font-size:11px;color:#8b949e;letter-spacing:2px'><span>DWG&nbsp;&nbsp;<b style='color:#e6edf3'>CYC-001</b></span><span>REV&nbsp;&nbsp;<b style='color:#e6edf3'>B.1</b></span><span>SCALE&nbsp;&nbsp;<b style='color:#e6edf3'>1:1</b></span><span>MODE&nbsp;&nbsp;<b style='color:#e6edf3'>detect&nbsp;·&nbsp;prevent</b></span><span>SHEET&nbsp;&nbsp;<b style='color:#e6edf3'>01&nbsp;/&nbsp;01</b></span></div></div>"]
+
+    Agent(["<div style='text-align:center;line-height:1.8;padding:4px 12px'><b style='letter-spacing:1.5px'>INPUT&nbsp;·&nbsp;MCP&nbsp;AGENT</b><br/><em style='color:#8b949e;font-size:13px;font-weight:400'>fetches an injected page, reads a key, tries to POST it out</em></div>"])
+
+    subgraph Tap["<div style='text-align:center;min-width:940px;line-height:2'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>STAGE&nbsp;01</span>&nbsp;&nbsp;·&nbsp;&nbsp;<b style='letter-spacing:2px'>TAP</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#bc8cff;letter-spacing:1px'>proxy.py</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>ROLE&nbsp;·&nbsp;out-of-band&nbsp;MCP&nbsp;proxy&nbsp;&nbsp;·&nbsp;&nbsp;never&nbsp;reads&nbsp;the&nbsp;prompt&nbsp;&nbsp;·&nbsp;&nbsp;stdio&nbsp;/&nbsp;Streamable&nbsp;HTTP</div></div>"]
+        direction LR
+        connect["<div style='text-align:center;line-height:1.7;padding:2px 4px'>CONNECT<br/>DOWNSTREAM<br/><small style='color:#6e7681;letter-spacing:1px'>downstream.toml&nbsp;·&nbsp;roles</small></div>"] --> intercept["<div style='text-align:center;line-height:1.7;padding:2px 4px'>INTERCEPT<br/>CALL<br/><small style='color:#6e7681;letter-spacing:1px'>tools/call&nbsp;·&nbsp;JSON-RPC</small></div>"] --> forward["<div style='text-align:center;line-height:1.7;padding:2px 4px'>FORWARD<br/>TO&nbsp;SERVER<br/><small style='color:#6e7681;letter-spacing:1px'>web&nbsp;·&nbsp;fs&nbsp;·&nbsp;notify&nbsp;·&nbsp;admin</small></div>"]
+    end
+
+    subgraph Classify["<div style='text-align:center;min-width:940px;line-height:2'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>STAGE&nbsp;02</span>&nbsp;&nbsp;·&nbsp;&nbsp;<b style='letter-spacing:2px'>CLASSIFY</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#d8853b;letter-spacing:1px'>C1&nbsp;classify.py</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>ROLE&nbsp;·&nbsp;taint&nbsp;every&nbsp;result&nbsp;from&nbsp;patterns.toml&nbsp;&nbsp;·&nbsp;&nbsp;no&nbsp;server&nbsp;/&nbsp;tool&nbsp;name&nbsp;hardcoded</div></div>"]
+        direction LR
+        untrusted["<div style='text-align:center;line-height:1.7;padding:2px 4px'>UNTRUSTED<br/>DATA<br/><small style='color:#6e7681;letter-spacing:1px'>web&nbsp;source</small></div>"] --> sensitive["<div style='text-align:center;line-height:1.7;padding:2px 4px'>SENSITIVE<br/>DATA<br/><small style='color:#6e7681;letter-spacing:1px'>secret&nbsp;read</small></div>"] --> action["<div style='text-align:center;line-height:1.7;padding:2px 4px'>ACTION<br/>PROPERTY<br/><small style='color:#6e7681;letter-spacing:1px'>is_egress&nbsp;·&nbsp;is_privileged</small></div>"]
+    end
+
+    subgraph Graph["<div style='text-align:center;min-width:940px;line-height:2'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>STAGE&nbsp;03</span>&nbsp;&nbsp;·&nbsp;&nbsp;<b style='letter-spacing:2px'>PROVENANCE</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#3fb950;letter-spacing:1px'>C3&nbsp;graph.py</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>ROLE&nbsp;·&nbsp;networkx&nbsp;DiGraph&nbsp;&nbsp;·&nbsp;&nbsp;argument-level&nbsp;derivation&nbsp;&nbsp;·&nbsp;&nbsp;encoding-aware&nbsp;(overlap.py)</div></div>"]
+        direction LR
+        tokenize["<div style='text-align:center;line-height:1.7;padding:2px 4px'>TOKENIZE<br/>ARGS&nbsp;+&nbsp;RESULTS<br/><small style='color:#6e7681;letter-spacing:1px'>distinctive&nbsp;·&nbsp;≥&nbsp;6&nbsp;chars</small></div>"] --> unmask["<div style='text-align:center;line-height:1.7;padding:2px 4px'>UNMASK<br/>ENCODINGS<br/><small style='color:#6e7681;letter-spacing:1px'>base64&nbsp;·&nbsp;hex&nbsp;·&nbsp;nested</small></div>"] --> link["<div style='text-align:center;line-height:1.7;padding:2px 4px'>LINK<br/>DERIVES-FROM<br/><small style='color:#6e7681;letter-spacing:1px'>shared&nbsp;token&nbsp;→&nbsp;edge</small></div>"]
+    end
+
+    subgraph Rules["<div style='text-align:center;min-width:940px;line-height:2'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>STAGE&nbsp;04</span>&nbsp;&nbsp;·&nbsp;&nbsp;<b style='letter-spacing:2px'>FLOW&nbsp;RULES</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#b88522;letter-spacing:1px'>C2&nbsp;find_toxic_flows</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>ROLE&nbsp;·&nbsp;typed&nbsp;FlowClass&nbsp;engine&nbsp;&nbsp;·&nbsp;&nbsp;graph&nbsp;reachability,&nbsp;not&nbsp;a&nbsp;per-call&nbsp;rule</div></div>"]
+        direction LR
+        exfil["<div style='text-align:center;line-height:1.7;padding:2px 4px'>EXFILTRATION<br/>untrusted&nbsp;⇝&nbsp;sensitive&nbsp;⇝&nbsp;egress<br/><small style='color:#f85149;letter-spacing:1px'>OWASP&nbsp;LLM02</small></div>"] --> agency["<div style='text-align:center;line-height:1.7;padding:2px 4px'>EXCESSIVE&nbsp;AGENCY<br/>untrusted&nbsp;⇝&nbsp;privileged<br/><small style='color:#f85149;letter-spacing:1px'>OWASP&nbsp;LLM06</small></div>"]
+    end
+
+    subgraph Decision["<div style='text-align:center;min-width:940px;line-height:2'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>STAGE&nbsp;05</span>&nbsp;&nbsp;·&nbsp;&nbsp;<b style='letter-spacing:2px'>SINK&nbsp;DECISION</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#d75952;letter-spacing:1px'>C4&nbsp;·&nbsp;C5&nbsp;·&nbsp;C6</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>ROLE&nbsp;·&nbsp;deny&nbsp;before&nbsp;the&nbsp;sink&nbsp;fires&nbsp;&nbsp;·&nbsp;&nbsp;the&nbsp;secret&nbsp;never&nbsp;leaves&nbsp;the&nbsp;machine</div></div>"]
+        direction LR
+        severity["<div style='text-align:center;line-height:1.7;padding:2px 4px'>SEVERITY<br/>LEAKED&nbsp;BYTES<br/><small style='color:#6e7681;letter-spacing:1px'>C4&nbsp;severity.py</small></div>"] --> choke["<div style='text-align:center;line-height:1.7;padding:2px 4px'>CHOKE-POINT<br/>NAME&nbsp;THE&nbsp;SINK<br/><small style='color:#6e7681;letter-spacing:1px'>C5&nbsp;·&nbsp;attack-graph</small></div>"] --> policy["<div style='text-align:center;line-height:1.7;padding:2px 4px'>POLICY<br/>DETECT&nbsp;/&nbsp;PREVENT<br/><small style='color:#6e7681;letter-spacing:1px'>C6&nbsp;·&nbsp;forward&nbsp;or&nbsp;deny</small></div>"] --> verdict(["<div style='text-align:center;line-height:1.7;padding:2px 4px'><b>BLOCKED</b><br/><small style='letter-spacing:1.5px'>session.json&nbsp;·&nbsp;OWASP&nbsp;tag</small></div>"])
+    end
+
+    subgraph Legend["<div style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px;min-width:940px;text-align:center'>LEGEND&nbsp;&nbsp;·&nbsp;&nbsp;TAINT&nbsp;=&nbsp;DATA&nbsp;·&nbsp;ACTION&nbsp;=&nbsp;EGRESS&nbsp;/&nbsp;PRIVILEGED&nbsp;·&nbsp;⇝&nbsp;=&nbsp;GRAPH&nbsp;REACHABILITY&nbsp;·&nbsp;0&nbsp;MODEL&nbsp;CALLS</div>"]
+        direction LR
+        lg1["<span style='color:#d8853b'>■</span>&nbsp;&nbsp;untrusted"] --- lg2["<span style='color:#d75952'>■</span>&nbsp;&nbsp;sensitive"] --- lg3["<span style='color:#3fb950'>■</span>&nbsp;&nbsp;provenance"] --- lg4["<span style='color:#b88522'>■</span>&nbsp;&nbsp;toxic&nbsp;flow"] --- lg5["<span style='color:#f85149'>■</span>&nbsp;&nbsp;blocked&nbsp;sink"]
+    end
+
+    TitleBlock ~~~ Agent
+    Agent -->|"INPUT · tools/call (JSON-RPC 2.0)"| Tap
+    Tap -->|"TAP · every call → detector"| Classify
+    Classify -->|"C1 · taint tag"| Graph
+    Graph -->|"C3 · derivation edges"| Rules
+    Rules -->|"C2 · has_path(untrusted ⇝ sink)"| Decision
+    Decision ~~~ Legend
+
+    classDef step fill:#0a1628,stroke:#1e3a5f,stroke-width:1px,color:#c9d1d9,rx:6,ry:6
+    classDef agent fill:#0a1628,stroke:#1e3a5f,stroke-width:1.5px,color:#e6edf3,rx:10,ry:10
+    classDef verdictStyle fill:#0f1d33,stroke:#f85149,stroke-width:2px,color:#f85149,rx:8,ry:8
+    classDef titleBlock fill:#06111f,stroke:#1e3a5f,stroke-width:1px,color:#e6edf3,rx:4,ry:4
+    classDef legend fill:#06111f,stroke:#1e3a5f,stroke-width:1px,color:#8b949e,rx:4,ry:4
+    classDef legendItem fill:#0a1628,stroke:#1e3a5f,stroke-width:0.5px,color:#c9d1d9,rx:4,ry:4
+
+    class Agent agent
+    class connect,intercept,forward,untrusted,sensitive,action,tokenize,unmask,link,exfil,agency,severity,choke,policy step
+    class verdict verdictStyle
+    class TitleBlock titleBlock
+    class Legend legend
+    class lg1,lg2,lg3,lg4,lg5 legendItem
+
+    style Tap      fill:#0f1d33,stroke:#bc8cff,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Classify fill:#0f1d33,stroke:#d8853b,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Graph    fill:#0f1d33,stroke:#3fb950,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Rules    fill:#0f1d33,stroke:#b88522,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Decision fill:#0f1d33,stroke:#d75952,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+
+    linkStyle default stroke:#8b949e,stroke-width:1.5px

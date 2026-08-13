@@ -112,16 +112,16 @@ Every claim of novelty in this repo is scoped to the *combination* (argument-lev
 cyclops runs as an **external MCP proxy**. The agent talks to cyclops; cyclops talks to the real tool servers. Every call is tapped, classified, and threaded into a provenance graph. When an egress call would close an `untrusted → sensitive → egress` path, cyclops flags it (detect) or denies it (prevent) — before it executes.
 
 <p align="center">
-  <a href="docs/assets/how-it-works.mmd" title="View how-it-works source (Mermaid)">
-    <img src="docs/assets/how-it-works.svg"
-         alt="Cyclops — how it works: an MCP agent's calls pass through the cyclops proxy to the real web / filesystem / notify servers; the proxy taints each result, threads a provenance graph, and flags or denies when an untrusted then sensitive then egress path closes"
+  <a href="docs/assets/pipeline.mmd" title="View pipeline source (Mermaid)">
+    <img src="docs/assets/pipeline.svg"
+         alt="Cyclops toxic-flow detection pipeline: an MCP agent's calls are tapped out-of-band by the proxy, then run through C1 classify, C3 provenance graph, C2 typed flow rules (EXFILTRATION LLM02, EXCESSIVE_AGENCY LLM06), and the C4/C5/C6 sink decision that denies the leak before it fires"
          width="100%" style="max-width: 1100px;">
   </a>
 </p>
 
 <sub align="center">
 
-Source: [docs/assets/how-it-works.mmd](docs/assets/how-it-works.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+Source: [docs/assets/pipeline.mmd](docs/assets/pipeline.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
 
 </sub>
 
@@ -158,16 +158,16 @@ In `prevent` mode the proxy denies the egress call that would close a toxic path
 Every tool call flows through one pipeline. `feed()` classifies it, threads it into the graph, and updates metrics; if an egress call closes a toxic path, severity is measured and the mode decides forward-with-flag or deny.
 
 <p align="center">
-  <a href="docs/assets/lifecycle.mmd" title="View lifecycle source (Mermaid)">
-    <img src="docs/assets/lifecycle.svg"
-         alt="Cyclops per-call lifecycle: C1 classify then C3 graph + overlap then C2 toxic-path check then C4 severity + C5 choke-point then C6 detect (flag) or prevent (deny)"
-         width="100%" style="max-width: 900px;">
+  <a href="docs/assets/flow-engine.mmd" title="View flow-engine source (Mermaid)">
+    <img src="docs/assets/flow-engine.svg"
+         alt="Cyclops per-call lifecycle: every tool call runs NODE 01 untrusted input then 02 out-of-band tap then 03 taint classify (C1) then 04 provenance graph (C3) then 05 flow rules (C2) then 06 sink decision (C5/C6), with zero model calls"
+         width="100%" style="max-width: 1100px;">
   </a>
 </p>
 
 <sub align="center">
 
-Source: [docs/assets/lifecycle.mmd](docs/assets/lifecycle.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+Source: [docs/assets/flow-engine.mmd](docs/assets/flow-engine.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
 
 </sub>
 
@@ -366,16 +366,16 @@ Not suggestions — contracts, enforced by tests and review. This is how cyclops
 The module dependency graph — everything rests on the vocabulary; the detection core is pure and model-free; transport and reporting sit on top.
 
 <p align="center">
-  <a href="docs/assets/arch-overview.mmd" title="View arch-overview source (Mermaid)">
-    <img src="docs/assets/arch-overview.svg"
-         alt="Cyclops architecture overview: the model-free detection core rests on the enums / records / patterns.toml / config vocabulary, with transport and config surfaces on top"
-         width="100%" style="max-width: 760px;">
+  <a href="docs/assets/module-graph.mmd" title="View module-graph source (Mermaid)">
+    <img src="docs/assets/module-graph.svg"
+         alt="Cyclops module dependency graph: everything funnels into the detector hub; enums are the shared leaf, so no server or tool name is hardcoded"
+         width="100%" style="max-width: 900px;">
   </a>
 </p>
 
 <sub align="center">
 
-Source: [docs/assets/arch-overview.mmd](docs/assets/arch-overview.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+Source: [docs/assets/module-graph.mmd](docs/assets/module-graph.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
 
 </sub>
 

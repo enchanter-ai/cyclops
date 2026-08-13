@@ -1,16 +1,16 @@
 # Architecture & flow
 
 <p align="center">
-  <a href="assets/flow-engine.mmd" title="View flow-engine source (Mermaid)">
-    <img src="assets/flow-engine.svg"
-         alt="Cyclops flow engine — the detection pipeline: MCP agent then out-of-band proxy tap then taint classify (C1) then provenance graph (C3) then typed flow rules (C2: EXFILTRATION LLM02, EXCESSIVE_AGENCY LLM06) then sink decision (detect / prevent)"
+  <a href="assets/pipeline.mmd" title="View pipeline source (Mermaid)">
+    <img src="assets/pipeline.svg"
+         alt="Cyclops toxic-flow detection pipeline blueprint: MCP agent then out-of-band proxy tap then C1 classify then C3 provenance graph then C2 typed flow rules (EXFILTRATION LLM02, EXCESSIVE_AGENCY LLM06) then C4/C5/C6 sink decision (detect / prevent)"
          width="100%" style="max-width: 1100px;">
   </a>
 </p>
 
 <sub align="center">
 
-Source: [assets/flow-engine.mmd](assets/flow-engine.mmd) · Regeneration command in [assets/README.md](assets/README.md).
+Source: [assets/pipeline.mmd](assets/pipeline.mmd) · Regeneration command in [assets/README.md](assets/README.md).
 
 </sub>
 

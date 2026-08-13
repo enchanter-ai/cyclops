@@ -8,14 +8,16 @@ reference the files here as `<img>`.
 
 | File | Source | Regenerate |
 |------|--------|-----------|
+| `pipeline.svg` | `pipeline.mmd` | `npx @mermaid-js/mermaid-cli -i pipeline.mmd -o pipeline.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js pipeline.svg` |
 | `flow-engine.svg` | `flow-engine.mmd` | `npx @mermaid-js/mermaid-cli -i flow-engine.mmd -o flow-engine.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js flow-engine.svg` |
-| `how-it-works.svg` | `how-it-works.mmd` | `npx @mermaid-js/mermaid-cli -i how-it-works.mmd -o how-it-works.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js how-it-works.svg` |
-| `lifecycle.svg` | `lifecycle.mmd` | `npx @mermaid-js/mermaid-cli -i lifecycle.mmd -o lifecycle.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js lifecycle.svg` |
-| `arch-overview.svg` | `arch-overview.mmd` | `npx @mermaid-js/mermaid-cli -i arch-overview.mmd -o arch-overview.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js arch-overview.svg` |
 | `module-graph.svg` | `module-graph.mmd` | `npx @mermaid-js/mermaid-cli -i module-graph.mmd -o module-graph.svg -c mermaid.config.json -b "#0a1628" -w 1400 && node apply-blueprint.js module-graph.svg` |
 
-The `apply-blueprint.js` step overlays an engineering-blueprint grid (navy
-`#0a1628` paper, `#1e3a5f` major lines / `#16304f` minor lines) onto the rendered
-diagram so it reads as a CAD drawing rather than a neutral dark card.
+Every diagram uses the wixie house style: engineering-drawing cards (title block,
+colored phase containers with inner step cards, gate-labelled edges, legend) on a
+navy blueprint grid. Palette: node `#0f1d33`, phase strokes `#bc8cff` / `#58a6ff`
+/ `#3fb950` / `#d8853b` / `#d75952` / `#b88522`, title & legend `#06111f`, grid
+`#1e3a5f` on `#0a1628`.
 
-Run the commands from `docs/assets/` (paths are relative).
+The `apply-blueprint.js` step overlays the navy `#0a1628` grid (major `#1e3a5f`,
+minor `#16304f`) onto the rendered diagram so it reads as a CAD drawing rather
+than a neutral dark card. Run the commands from `docs/assets/` (paths relative).
