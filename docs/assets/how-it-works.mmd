@@ -1,0 +1,42 @@
+---
+title: Cyclops — how it works
+config:
+  look: neo
+  theme: dark
+  themeVariables:
+    background: '#0a1628'
+    primaryColor: '#0f1d33'
+    primaryTextColor: '#e6edf3'
+    primaryBorderColor: '#1e3a5f'
+    lineColor: '#8b949e'
+    secondaryColor: '#0f1d33'
+    tertiaryColor: '#0a1628'
+    mainBkg: '#0f1d33'
+    clusterBkg: '#06111f'
+    clusterBorder: '#1e3a5f'
+    fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'
+  flowchart:
+    curve: basis
+    padding: 16
+    nodeSpacing: 40
+    rankSpacing: 46
+---
+flowchart LR
+  classDef u fill:#0f1d33,stroke:#d8853b,color:#e6edf3,rx:8,ry:8
+  classDef s fill:#0f1d33,stroke:#d75952,color:#e6edf3,rx:8,ry:8
+  classDef e fill:#0f1d33,stroke:#58a6ff,color:#e6edf3,rx:8,ry:8
+  classDef v fill:#06111f,stroke:#3fb950,color:#e6edf3,rx:8,ry:8
+  classDef p fill:#0f1d33,stroke:#bc8cff,color:#e6edf3,rx:8,ry:8
+  A(["MCP agent"]):::p
+  P{{"cyclops proxy<br/>taint · graph · bytes"}}:::p
+  W["web server"]:::u
+  F["filesystem server"]:::s
+  N["notify / egress"]:::e
+  V{{"TOXIC ⇒ FLAG / DENY"}}:::v
+  A -->|"① fetch_url (injected page)"| P
+  A -->|"② read_file ~/.ssh/id_rsa"| P
+  A -->|"③ post body = key"| P
+  P --> W
+  P --> F
+  P -.->|blocks in prevent| N
+  P ==>|"untrusted → sensitive → egress ?"| V

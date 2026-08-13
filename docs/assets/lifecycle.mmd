@@ -1,0 +1,35 @@
+---
+title: Cyclops lifecycle
+config:
+  look: neo
+  theme: dark
+  themeVariables:
+    background: '#0a1628'
+    primaryColor: '#0f1d33'
+    primaryTextColor: '#e6edf3'
+    primaryBorderColor: '#1e3a5f'
+    lineColor: '#8b949e'
+    secondaryColor: '#0f1d33'
+    tertiaryColor: '#0a1628'
+    mainBkg: '#0f1d33'
+    clusterBkg: '#06111f'
+    clusterBorder: '#1e3a5f'
+    fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'
+  flowchart:
+    curve: basis
+    padding: 16
+    nodeSpacing: 40
+    rankSpacing: 46
+---
+flowchart TB
+  classDef n fill:#0f1d33,stroke:#58a6ff,color:#e6edf3,rx:8,ry:8
+  classDef d fill:#0f1d33,stroke:#d75952,color:#e6edf3,rx:8,ry:8
+  classDef g fill:#06111f,stroke:#3fb950,color:#e6edf3,rx:8,ry:8
+  call["tool call<br/>(server · tool · args · result)"]:::n --> classify["C1 classify.py<br/>taint tag"]:::n
+  classify --> gph["C3 graph.py + overlap.py<br/>add node + derivation edges"]:::n
+  gph --> check{"C2 egress call closes<br/>untrusted → sensitive → egress?"}:::n
+  check -- no --> fwd["forward · record metrics"]:::g
+  check -- yes --> sev["C4 severity.py<br/>leaked bytes + C5 choke-point"]:::n
+  sev --> mode{"C6 mode?"}:::n
+  mode -- detect --> flag["FLAG · forward"]:::g
+  mode -- prevent --> deny["DENY egress · block"]:::d

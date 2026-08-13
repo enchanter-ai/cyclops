@@ -111,27 +111,19 @@ Every claim of novelty in this repo is scoped to the *combination* (argument-lev
 
 cyclops runs as an **external MCP proxy**. The agent talks to cyclops; cyclops talks to the real tool servers. Every call is tapped, classified, and threaded into a provenance graph. When an egress call would close an `untrusted → sensitive → egress` path, cyclops flags it (detect) or denies it (prevent) — before it executes.
 
-```mermaid
-flowchart LR
-  classDef u fill:#3a2f14,stroke:#d6a441,color:#fbeecb
-  classDef s fill:#3a1a18,stroke:#ff6b5e,color:#ffd9d4
-  classDef e fill:#122a44,stroke:#5aa9ff,color:#d5e8ff
-  classDef v fill:#123626,stroke:#57c98a,color:#d6f5e5
-  classDef p fill:#131d2b,stroke:#4aa3c7,color:#dff1f8
-  A(["MCP agent"]):::p
-  P{{"cyclops proxy<br/>taint · graph · bytes"}}:::p
-  W["web server"]:::u
-  F["filesystem server"]:::s
-  N["notify / egress"]:::e
-  V{{"TOXIC ⇒ FLAG / DENY"}}:::v
-  A -->|"① fetch_url (injected page)"| P
-  A -->|"② read_file ~/.ssh/id_rsa"| P
-  A -->|"③ post body = key"| P
-  P --> W
-  P --> F
-  P -.->|blocks in prevent| N
-  P ==>|"untrusted → sensitive → egress ?"| V
-```
+<p align="center">
+  <a href="docs/assets/how-it-works.mmd" title="View how-it-works source (Mermaid)">
+    <img src="docs/assets/how-it-works.svg"
+         alt="Cyclops — how it works: an MCP agent's calls pass through the cyclops proxy to the real web / filesystem / notify servers; the proxy taints each result, threads a provenance graph, and flags or denies when an untrusted then sensitive then egress path closes"
+         width="100%" style="max-width: 1100px;">
+  </a>
+</p>
+
+<sub align="center">
+
+Source: [docs/assets/how-it-works.mmd](docs/assets/how-it-works.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+
+</sub>
 
 No single call is "bad." Reading a key is fine; POSTing is fine; fetching is fine. The **chain** — the same secret bytes flowing from an untrusted source to a sink — is the threat, which is why cyclops reasons over a graph, not a per-call rule.
 
@@ -165,20 +157,19 @@ In `prevent` mode the proxy denies the egress call that would close a toxic path
 
 Every tool call flows through one pipeline. `feed()` classifies it, threads it into the graph, and updates metrics; if an egress call closes a toxic path, severity is measured and the mode decides forward-with-flag or deny.
 
-```mermaid
-flowchart TB
-  classDef n fill:#131d2b,stroke:#4aa3c7,color:#dff1f8
-  classDef d fill:#3a1a18,stroke:#ff6b5e,color:#ffd9d4
-  classDef g fill:#123626,stroke:#57c98a,color:#d6f5e5
-  call["tool call<br/>(server · tool · args · result)"]:::n --> classify["C1 classify.py<br/>taint tag"]:::n
-  classify --> gph["C3 graph.py + overlap.py<br/>add node + derivation edges"]:::n
-  gph --> check{"C2 egress call closes<br/>untrusted → sensitive → egress?"}:::n
-  check -- no --> fwd["forward · record metrics"]:::g
-  check -- yes --> sev["C4 severity.py<br/>leaked bytes + C5 choke-point"]:::n
-  sev --> mode{"C6 mode?"}:::n
-  mode -- detect --> flag["FLAG · forward"]:::g
-  mode -- prevent --> deny["DENY egress · block"]:::d
-```
+<p align="center">
+  <a href="docs/assets/lifecycle.mmd" title="View lifecycle source (Mermaid)">
+    <img src="docs/assets/lifecycle.svg"
+         alt="Cyclops per-call lifecycle: C1 classify then C3 graph + overlap then C2 toxic-path check then C4 severity + C5 choke-point then C6 detect (flag) or prevent (deny)"
+         width="100%" style="max-width: 900px;">
+  </a>
+</p>
+
+<sub align="center">
+
+Source: [docs/assets/lifecycle.mmd](docs/assets/lifecycle.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+
+</sub>
 
 ## Install
 
@@ -374,33 +365,19 @@ Not suggestions — contracts, enforced by tests and review. This is how cyclops
 
 The module dependency graph — everything rests on the vocabulary; the detection core is pure and model-free; transport and reporting sit on top.
 
-```mermaid
-flowchart BT
-  classDef voc fill:#2a2140,stroke:#b48ce8,color:#efe6fb
-  classDef core fill:#123141,stroke:#4aa3c7,color:#dff1f8
-  classDef io fill:#123626,stroke:#57c98a,color:#d6f5e5
-  subgraph VOC["Contracts & Vocabulary"]
-    enums["enums/"]:::voc
-    records["records/"]:::voc
-    patterns["patterns.toml"]:::voc
-    config["config.py"]:::voc
-  end
-  subgraph CORE["Detection Core (model-free)"]
-    classify["classify.py"]:::core
-    overlap["overlap.py"]:::core
-    graphf["graph.py"]:::core
-    severity["severity.py"]:::core
-    detector["detector.py"]:::core
-  end
-  subgraph IO["Transport & Config"]
-    downstream["downstream.py"]:::io
-    proxy["proxy.py"]:::io
-  end
-  CORE --> VOC
-  downstream --> VOC
-  proxy --> CORE
-  proxy --> downstream
-```
+<p align="center">
+  <a href="docs/assets/arch-overview.mmd" title="View arch-overview source (Mermaid)">
+    <img src="docs/assets/arch-overview.svg"
+         alt="Cyclops architecture overview: the model-free detection core rests on the enums / records / patterns.toml / config vocabulary, with transport and config surfaces on top"
+         width="100%" style="max-width: 760px;">
+  </a>
+</p>
+
+<sub align="center">
+
+Source: [docs/assets/arch-overview.mmd](docs/assets/arch-overview.mmd) · Regeneration command in [docs/assets/README.md](docs/assets/README.md).
+
+</sub>
 
 A file-by-file map with runtime flows lives in [docs/architecture.md](docs/architecture.md).
 

@@ -1,0 +1,71 @@
+---
+title: Cyclops flow engine
+config:
+  look: neo
+  theme: dark
+  themeVariables:
+    background: '#0a1628'
+    primaryColor: '#0f1d33'
+    primaryTextColor: '#e6edf3'
+    primaryBorderColor: '#1e3a5f'
+    lineColor: '#8b949e'
+    secondaryColor: '#0f1d33'
+    tertiaryColor: '#0a1628'
+    mainBkg: '#0a1628'
+    clusterBkg: '#06111f'
+    clusterBorder: '#1e3a5f'
+    fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'
+  flowchart:
+    curve: basis
+    padding: 18
+    nodeSpacing: 44
+    rankSpacing: 50
+    htmlLabels: true
+    subGraphTitleMargin:
+      top: 14
+      bottom: 18
+---
+flowchart TB
+    TitleBlock["<div style='font-family:ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center;min-width:940px;padding:6px 10px;line-height:1.8'><div style='color:#58a6ff;font-size:15px;letter-spacing:6px;border-bottom:1px solid #1e3a5f;padding-bottom:10px;margin-bottom:10px'>CYCLOPS &nbsp;·&nbsp; FLOW&nbsp;ENGINE &nbsp;·&nbsp; DETECTION&nbsp;PIPELINE</div><div style='display:flex;gap:40px;justify-content:center;font-size:11px;color:#8b949e;letter-spacing:2px'><span>DWG&nbsp;&nbsp;<b style='color:#e6edf3'>CYC-001</b></span><span>REV&nbsp;&nbsp;<b style='color:#e6edf3'>B.0</b></span><span>SCALE&nbsp;&nbsp;<b style='color:#e6edf3'>1:1</b></span><span>MODEL&nbsp;CALLS&nbsp;&nbsp;<b style='color:#e6edf3'>n&nbsp;=&nbsp;0</b></span><span>SHEET&nbsp;&nbsp;<b style='color:#e6edf3'>01&nbsp;/&nbsp;01</b></span></div></div>"]
+
+    Agent["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;01&nbsp;·&nbsp;UNTRUSTED&nbsp;INPUT</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>MCP&nbsp;AGENT</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#58a6ff'>autonomous&nbsp;·&nbsp;every&nbsp;call&nbsp;is&nbsp;sanctioned</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>reads&nbsp;a&nbsp;web&nbsp;page&nbsp;carrying&nbsp;a&nbsp;hidden&nbsp;instruction&nbsp;·&nbsp;JSON-RPC&nbsp;2.0&nbsp;tools/call</div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#79c0ff'>tool&nbsp;calls&nbsp;+&nbsp;results&nbsp;(the&nbsp;raw&nbsp;stream)</span></div></div>"]
+
+    Proxy["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;02&nbsp;·&nbsp;OUT-OF-BAND&nbsp;TAP</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>CYCLOPS&nbsp;PROXY</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#bc8cff'>proxy.py&nbsp;→&nbsp;downstream.toml</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>sits&nbsp;between&nbsp;agent&nbsp;and&nbsp;real&nbsp;servers&nbsp;·&nbsp;stdio&nbsp;/&nbsp;Streamable&nbsp;HTTP&nbsp;·&nbsp;never&nbsp;reads&nbsp;the&nbsp;prompt</div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#d2a8ff'>every&nbsp;call&nbsp;→&nbsp;detector&nbsp;(the&nbsp;hub)</span></div></div>"]
+
+    Classify["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;03&nbsp;·&nbsp;TAINT&nbsp;CLASSIFY&nbsp;(C1)</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>CLASSIFY</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#d8853b'>classify.py&nbsp;←&nbsp;patterns.toml</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'><span style='color:#ff7b72'>UNTRUSTED</span>&nbsp;(web)&nbsp;·&nbsp;<span style='color:#d2a8ff'>SENSITIVE</span>&nbsp;(secret&nbsp;read)&nbsp;·&nbsp;<span style='color:#8b949e'>NORMAL</span>&nbsp;·&nbsp;is_egress&nbsp;·&nbsp;is_privileged</div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#ffa657'>each&nbsp;call&nbsp;tagged&nbsp;·&nbsp;no&nbsp;name&nbsp;hardcoded</span></div></div>"]
+
+    Provgraph["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;04&nbsp;·&nbsp;PROVENANCE&nbsp;GRAPH&nbsp;(C3)</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>GRAPH</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#3fb950'>graph.py&nbsp;·&nbsp;networkx.DiGraph</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>edge&nbsp;iff&nbsp;a&nbsp;later&nbsp;arg&nbsp;shares&nbsp;a&nbsp;distinctive&nbsp;token&nbsp;with&nbsp;an&nbsp;earlier&nbsp;result&nbsp;·&nbsp;base64&nbsp;/&nbsp;hex-aware&nbsp;(overlap.py)</div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#7ee787'>derivation&nbsp;edges&nbsp;·&nbsp;reachability&nbsp;is&nbsp;the&nbsp;decision</span></div></div>"]
+
+    Rules["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;05&nbsp;·&nbsp;FLOW&nbsp;RULES&nbsp;(C2)</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>find_toxic_flows()</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#b88522'>typed&nbsp;FlowClass&nbsp;engine</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'><span style='color:#ff7b72'>EXFILTRATION</span>&nbsp;untrusted&nbsp;⇝&nbsp;sensitive&nbsp;⇝&nbsp;egress&nbsp;<b style='color:#f85149'>[LLM02]</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#ffa657'>EXCESSIVE_AGENCY</span>&nbsp;untrusted&nbsp;⇝&nbsp;privileged&nbsp;<b style='color:#f85149'>[LLM06]</b></div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#d4a72c'>Flow(class,&nbsp;path,&nbsp;choke_point)</span></div></div>"]
+
+    Sink["<div style='text-align:center;min-width:940px;line-height:2;padding:4px 8px'><div><span style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px'>NODE&nbsp;06&nbsp;·&nbsp;SINK&nbsp;DECISION&nbsp;(C5&nbsp;/&nbsp;C6)</span></div><div style='line-height:1.8'><b style='letter-spacing:2px'>DETECT&nbsp;|&nbsp;PREVENT</b>&nbsp;&nbsp;·&nbsp;&nbsp;<span style='color:#d75952'>deny&nbsp;before&nbsp;the&nbsp;sink&nbsp;fires</span></div><div style='color:#6e7681;font-size:11px;font-family:ui-monospace,monospace;letter-spacing:1.2px'>severity.py&nbsp;counts&nbsp;leaked&nbsp;secret&nbsp;bytes&nbsp;·&nbsp;prevent&nbsp;mode&nbsp;blocks&nbsp;the&nbsp;egress&nbsp;/&nbsp;privileged&nbsp;call</div><div style='border-top:1px solid #1e3a5f;margin-top:6px;padding-top:6px;font-family:ui-monospace,monospace;font-size:11px;letter-spacing:1px'><span style='color:#8b949e'>EMITS</span>&nbsp;&nbsp;<span style='color:#ff7b72'>out/session.json&nbsp;·&nbsp;BLOCKED&nbsp;·&nbsp;OWASP&nbsp;tag&nbsp;·&nbsp;bytes&nbsp;stopped</span></div></div>"]
+
+    subgraph Legend["<div style='font-family:ui-monospace,monospace;color:#8b949e;font-size:11px;letter-spacing:3px;min-width:940px;text-align:center'>LEGEND&nbsp;&nbsp;·&nbsp;&nbsp;taint&nbsp;=&nbsp;data&nbsp;property&nbsp;&nbsp;·&nbsp;&nbsp;egress&nbsp;/&nbsp;privileged&nbsp;=&nbsp;action&nbsp;property&nbsp;&nbsp;·&nbsp;&nbsp;⇝&nbsp;=&nbsp;graph&nbsp;reachability&nbsp;&nbsp;·&nbsp;&nbsp;0&nbsp;model&nbsp;calls&nbsp;in&nbsp;the&nbsp;decision&nbsp;path</div>"]
+        direction LR
+        lg1["<span style='color:#ff7b72'>■</span>&nbsp;&nbsp;untrusted"] --- lg2["<span style='color:#d2a8ff'>■</span>&nbsp;&nbsp;sensitive"] --- lg3["<span style='color:#ffa657'>■</span>&nbsp;&nbsp;privileged"] --- lg4["<span style='color:#3fb950'>■</span>&nbsp;&nbsp;provenance"] --- lg5["<span style='color:#d75952'>■</span>&nbsp;&nbsp;blocked&nbsp;sink"]
+    end
+
+    TitleBlock ~~~ Agent
+    Agent ==>|"TAP · tools/call (JSON-RPC 2.0)"| Proxy
+    Proxy ==>|"C1 · taint every result"| Classify
+    Classify ==>|"C3 · add_call → derives-from"| Provgraph
+    Provgraph ==>|"C2 · has_path(untrusted ⇝ sink)"| Rules
+    Rules ==>|"prevent · deny at choke-point"| Sink
+    Sink -.->|"detect · forward + flag"| Legend
+
+    classDef titleBlock fill:#06111f,stroke:#1e3a5f,stroke-width:1px,color:#e6edf3,rx:4,ry:4
+    classDef legend fill:#06111f,stroke:#1e3a5f,stroke-width:1px,color:#8b949e,rx:4,ry:4
+    classDef legendItem fill:#0a1628,stroke:#1e3a5f,stroke-width:0.5px,color:#c9d1d9,rx:4,ry:4
+
+    class TitleBlock titleBlock
+    class Legend legend
+    class lg1,lg2,lg3,lg4,lg5 legendItem
+
+    style Agent     fill:#0f1d33,stroke:#58a6ff,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Proxy     fill:#0f1d33,stroke:#bc8cff,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Classify  fill:#0f1d33,stroke:#d8853b,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Provgraph fill:#0f1d33,stroke:#3fb950,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Rules     fill:#0f1d33,stroke:#b88522,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+    style Sink      fill:#0f1d33,stroke:#d75952,stroke-width:2px,color:#e6edf3,rx:12,ry:12
+
+    linkStyle default stroke:#8b949e,stroke-width:1.5px

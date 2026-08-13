@@ -1,0 +1,65 @@
+---
+title: Cyclops module graph
+config:
+  look: neo
+  theme: dark
+  themeVariables:
+    background: '#0a1628'
+    primaryColor: '#0f1d33'
+    primaryTextColor: '#e6edf3'
+    primaryBorderColor: '#1e3a5f'
+    lineColor: '#8b949e'
+    secondaryColor: '#0f1d33'
+    tertiaryColor: '#0a1628'
+    mainBkg: '#0f1d33'
+    clusterBkg: '#06111f'
+    clusterBorder: '#1e3a5f'
+    fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif'
+  flowchart:
+    curve: basis
+    padding: 16
+    nodeSpacing: 40
+    rankSpacing: 46
+---
+flowchart TD
+  subgraph L0["foundation"]
+    enums["enums/ — Server·Tool·Taint·Mode·FlowClass"]
+    toml["patterns.toml — detection data"]
+  end
+  subgraph L1["config"]
+    config["config.py"]
+  end
+  subgraph L2["primitives"]
+    overlap["overlap.py — encoding-unmask + tokens"]
+    records["records/ — ToolCall · Flow · Metrics"]
+    classify["classify.py — taint rules"]
+  end
+  subgraph L3["detection core"]
+    severity["severity.py — bytes leaked"]
+    gph["graph.py — provenance + flow rules"]
+  end
+  subgraph L4["hub"]
+    detector["detector.py — feed / flows / blocks / metrics"]
+  end
+  subgraph L5["surfaces"]
+    downstream["downstream.py — server map loader"]
+    proxy["proxy.py — live MCP tap + session.json"]
+  end
+  config --> enums
+  overlap --> config
+  records --> config
+  records --> enums
+  classify --> config
+  classify --> enums
+  severity --> overlap
+  gph --> overlap
+  gph --> records
+  gph --> enums
+  detector --> classify
+  detector --> gph
+  detector --> severity
+  detector --> records
+  downstream --> enums
+  proxy --> detector
+  proxy --> config
+  proxy --> downstream

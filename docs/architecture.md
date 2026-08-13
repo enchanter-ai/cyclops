@@ -1,55 +1,44 @@
 # Architecture & flow
 
+<p align="center">
+  <a href="assets/flow-engine.mmd" title="View flow-engine source (Mermaid)">
+    <img src="assets/flow-engine.svg"
+         alt="Cyclops flow engine — the detection pipeline: MCP agent then out-of-band proxy tap then taint classify (C1) then provenance graph (C3) then typed flow rules (C2: EXFILTRATION LLM02, EXCESSIVE_AGENCY LLM06) then sink decision (detect / prevent)"
+         width="100%" style="max-width: 1100px;">
+  </a>
+</p>
+
+<sub align="center">
+
+Source: [assets/flow-engine.mmd](assets/flow-engine.mmd) · Regeneration command in [assets/README.md](assets/README.md).
+
+</sub>
+
 Derived from the real import graph. Everything funnels up into one hub —
 `detector.py`. Enums are the shared leaf, which is why no server/tool name is
 hardcoded anywhere.
 
+The blueprint above is the runtime pipeline (`DWG CYC-001`): an MCP agent's calls
+are tapped out-of-band, taint-classified (C1), linked into a provenance graph (C3),
+and matched against the two typed flow rules (C2) — `EXFILTRATION`
+(untrusted ⇝ sensitive ⇝ egress, **OWASP LLM02**) and `EXCESSIVE_AGENCY`
+(untrusted ⇝ privileged, **OWASP LLM06**) — before the sink fires.
+
 ## Module dependency graph
 
-```mermaid
-flowchart TD
-  subgraph L0["foundation"]
-    enums["enums/ — Server·Tool·Taint·Mode"]
-    toml["patterns.toml — detection data"]
-  end
-  subgraph L1["config"]
-    config["config.py"]
-  end
-  subgraph L2["primitives"]
-    overlap["overlap.py — encoding-unmask + tokens"]
-    records["records/ — ToolCall · Metrics"]
-    classify["classify.py — taint rules"]
-  end
-  subgraph L3["detection core"]
-    severity["severity.py — bytes leaked"]
-    graph["graph.py — provenance + toxic path"]
-  end
-  subgraph L4["hub"]
-    detector["detector.py — feed / toxic_path / blocks / metrics"]
-  end
-  subgraph L5["surfaces"]
-    downstream["downstream.py — server map loader"]
-    proxy["proxy.py — live MCP tap + session.json"]
-  end
-  config --> enums
-  overlap --> config
-  records --> config
-  records --> enums
-  classify --> config
-  classify --> enums
-  severity --> overlap
-  graph --> overlap
-  graph --> records
-  graph --> enums
-  detector --> classify
-  detector --> graph
-  detector --> severity
-  detector --> records
-  downstream --> enums
-  proxy --> detector
-  proxy --> config
-  proxy --> downstream
-```
+<p align="center">
+  <a href="assets/module-graph.mmd" title="View module-graph source (Mermaid)">
+    <img src="assets/module-graph.svg"
+         alt="Cyclops module dependency graph: everything funnels into the detector hub; enums are the shared leaf, so no server or tool name is hardcoded"
+         width="100%" style="max-width: 900px;">
+  </a>
+</p>
+
+<sub align="center">
+
+Source: [assets/module-graph.mmd](assets/module-graph.mmd) · Regeneration command in [assets/README.md](assets/README.md).
+
+</sub>
 
 ## File by file
 
