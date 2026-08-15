@@ -17,10 +17,10 @@ from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
 from mcp.types import ContentBlock, TextContent
 from mcp.types import Tool as MCPTool
 
-from .config import EGRESS, OWASP, PRIVILEGED
+from .config import EGRESS, OWASP, PRIVILEGED, assert_closure
 from .detector import Detector
 from .downstream import Downstream, load
-from .enums import Mode, Server, Transport
+from .enums import Mode, Transport
 
 _SESSION = Path(os.environ.get("CYCLOPS_SESSION", "out/session.json"))
 
@@ -30,11 +30,16 @@ def _text(content: list[ContentBlock]) -> str:
 def _blocked() -> list[ContentBlock]:
     return [TextContent(type="text", text="cyclops blocked this call: toxic flow detected before the sink")]
 
-def _claim(owner: dict[str, Server], names: list[str], server: Server) -> None:
+def _claim(owner: dict[str, str], names: list[str], server: str) -> None:
     for name in names:
         if name in owner:
             raise ValueError(f"duplicate tool name across downstream servers: {name}")
         owner[name] = server
+
+def _verify_sinks(advertised: set[tuple[str, str]]) -> None:
+    missing = (EGRESS | PRIVILEGED) - advertised
+    if missing:
+        raise ValueError(f"declared egress/privileged sinks not advertised by any downstream server: {sorted(missing)}")
 
 async def _open(stack: AsyncExitStack, spec: Downstream) -> tuple[Any, Any]:
     if spec.transport is Transport.STDIO:
@@ -49,8 +54,8 @@ async def _open(stack: AsyncExitStack, spec: Downstream) -> tuple[Any, Any]:
 @contextlib.asynccontextmanager
 async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
     detector = Detector(mode)
-    sessions: dict[Server, ClientSession] = {}
-    owner: dict[str, Server] = {}
+    sessions: dict[str, ClientSession] = {}
+    owner: dict[str, str] = {}
     app = MCPServer("cyclops-proxy")
 
     @app.list_tools()
@@ -63,6 +68,8 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[ContentBlock]:
+        if name not in owner:
+            return [TextContent(type="text", text=f"cyclops: unknown tool {name}")]
         server, tool = owner[name], name
         if (server, tool) in EGRESS or (server, tool) in PRIVILEGED:
             call = detector.feed(server, tool, arguments, "")
@@ -74,12 +81,18 @@ async def connected(mode: Mode) -> AsyncIterator[tuple[MCPServer, Detector]]:
         return result.content
 
     async with AsyncExitStack() as stack:
-        for spec in load():
+        specs = load()
+        assert_closure({spec.server for spec in specs})
+        advertised: set[tuple[str, str]] = set()
+        for spec in specs:
             read, write = await _open(stack, spec)
             session = await stack.enter_async_context(ClientSession(read, write))
             await session.initialize()
             sessions[spec.server] = session
-            _claim(owner, [t.name for t in (await session.list_tools()).tools], spec.server)
+            names = [t.name for t in (await session.list_tools()).tools]
+            _claim(owner, names, spec.server)
+            advertised |= {(spec.server, n) for n in names}
+        _verify_sinks(advertised)
         yield app, detector
 
 async def serve_stdio(mode: Mode = Mode.DETECT) -> None:

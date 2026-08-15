@@ -3,15 +3,17 @@
 # Copy this file to downstream.toml and point CYCLOPS_DOWNSTREAM at it:
 #     export CYCLOPS_DOWNSTREAM=/etc/cyclops/downstream.toml
 #
-# Each [[server]] binds a REAL MCP server to one of cyclops' logical security
-# roles. The role name MUST be a member of the Server enum
-# (cyclops/enums/server.py): "web", "filesystem", "notify", "admin".
+# Each [[server]] binds a REAL MCP server to a logical security role. The role
+# name is any string — it just has to match the names patterns.toml uses. The
+# shipped patterns.toml (or your CYCLOPS_PATTERNS override) declares which roles
+# are untrusted / sensitive and which (role, tool) pairs are egress / privileged;
+# every role it names must be declared here (checked at startup), and every
+# declared egress/privileged sink must be a tool the bound server advertises.
 #
-# The role — not the endpoint — drives detection. patterns.toml declares which
-# roles are untrusted / sensitive and which (role, tool) pairs are egress /
-# privileged. Bind your untrusted source to "web", your secret-bearing store to
-# "filesystem", your outbound channel to "notify", your privileged actuator to
-# "admin". No production endpoint is ever hard-coded in Python.
+# The default patterns.toml uses "web" (untrusted source), "filesystem"
+# (sensitive store), "notify"/"post" (egress) and "admin"/"grant_access"
+# (privileged) — rename all of them to your real servers and tools. No server,
+# tool, or endpoint is hard-coded in Python.
 #
 # transport = "stdio"  launches the server as a child process (command + args).
 # transport = "http"   connects to a Streamable-HTTP MCP endpoint (url).

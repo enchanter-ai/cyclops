@@ -2,12 +2,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..config import EGRESS, PRIVILEGED
-from ..enums import Server, Taint
+from ..enums import Taint
 
 @dataclass(frozen=True, slots=True)
 class ToolCall:
     id: str
-    server: Server
+    server: str
     tool: str
     args: dict[str, Any]
     result: str

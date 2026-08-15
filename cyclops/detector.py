@@ -1,7 +1,7 @@
 from typing import Any
 
 from .classify import classify
-from .enums import Mode, Server
+from .enums import Mode
 from .graph import ProvenanceGraph
 from .records import Flow, Metrics, ToolCall
 from .severity import leaked_bytes
@@ -13,7 +13,7 @@ class Detector:
         self.metrics = Metrics()
         self._seq = 0
 
-    def feed(self, server: Server, tool: str, args: dict[str, Any], result: str) -> ToolCall:
+    def feed(self, server: str, tool: str, args: dict[str, Any], result: str) -> ToolCall:
         self._seq += 1
         call = ToolCall(f"c{self._seq}", server, tool, args, result, classify(server, tool, args, result))
         self.graph.add_call(call)

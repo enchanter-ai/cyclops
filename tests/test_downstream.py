@@ -2,8 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from cyclops.config import assert_closure
 from cyclops.downstream import load
-from cyclops.enums import Server, Transport
+from cyclops.enums import Transport
 
 EXAMPLE = Path("downstream.example.toml")
 
@@ -14,7 +15,7 @@ def _write(tmp_path, body):
 
 def test_example_template_loads():
     specs = load(EXAMPLE)
-    assert {s.server for s in specs} == set(Server)
+    assert {s.server for s in specs} == {"web", "filesystem", "notify", "admin"}
 
 def test_stdio_spec_parsed(tmp_path):
     path = _write(tmp_path, '[[server]]\nname = "filesystem"\ntransport = "stdio"\ncommand = "python"\nargs = ["-m", "x"]\n')
@@ -31,10 +32,16 @@ def test_http_spec_parsed(tmp_path):
     assert spec.url == "https://x/mcp"
     assert spec.command is None
 
-def test_unknown_role_rejected(tmp_path):
-    path = _write(tmp_path, '[[server]]\nname = "database"\ntransport = "stdio"\ncommand = "x"\n')
+def test_arbitrary_server_name_loads(tmp_path):
+    path = _write(tmp_path, '[[server]]\nname = "slack"\ntransport = "http"\nurl = "https://x/mcp"\n')
+    assert load(path)[0].server == "slack"
+
+def test_closure_rejects_undeclared_reference():
     with pytest.raises(ValueError):
-        load(path)
+        assert_closure({"web"})
+
+def test_closure_passes_when_all_declared():
+    assert_closure({"web", "filesystem", "notify", "admin"})
 
 def test_stdio_without_command_rejected(tmp_path):
     path = _write(tmp_path, '[[server]]\nname = "web"\ntransport = "stdio"\n')

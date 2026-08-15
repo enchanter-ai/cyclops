@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .enums import Server, Transport
+from .enums import Transport
 
 _PATH = Path(os.environ.get("CYCLOPS_DOWNSTREAM", "downstream.toml"))
 
 @dataclass(frozen=True, slots=True)
 class Downstream:
-    server: Server
+    server: str
     transport: Transport
     command: str | None
     args: tuple[str, ...]
@@ -19,10 +19,10 @@ class Downstream:
 def load(path: str | Path | None = None) -> list[Downstream]:
     source = Path(path) if path is not None else _PATH
     data = tomllib.loads(source.read_text(encoding="utf-8"))
-    seen: set[Server] = set()
+    seen: set[str] = set()
     out: list[Downstream] = []
     for entry in data.get("server", []):
-        server = Server(entry["name"])
+        server = str(entry["name"])
         if server in seen:
             raise ValueError(f"duplicate downstream server: {server}")
         seen.add(server)
@@ -31,7 +31,7 @@ def load(path: str | Path | None = None) -> list[Downstream]:
         raise ValueError(f"no downstream servers declared in {source}")
     return out
 
-def _build(server: Server, transport: Transport, entry: dict[str, Any]) -> Downstream:
+def _build(server: str, transport: Transport, entry: dict[str, Any]) -> Downstream:
     if transport is Transport.STDIO:
         command = entry.get("command")
         if not command:
