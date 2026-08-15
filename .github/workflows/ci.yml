@@ -32,5 +32,5 @@ jobs:
         run: mypy cyclops
       - name: Pytest
         run: pytest -q
-      - name: Downstream config smoke (template parses to all roles)
-        run: python -c "from cyclops.downstream import load; from cyclops.enums import Server; assert {s.server for s in load('downstream.example.toml')} == set(Server)"
+      - name: Downstream config smoke (template declares every referenced role)
+        run: python -c "from cyclops.downstream import load; from cyclops.config import assert_closure; names={s.server for s in load('downstream.example.toml')}; assert names == {'web','filesystem','notify','admin'}; assert_closure(names)"
