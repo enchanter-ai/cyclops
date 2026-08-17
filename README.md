@@ -173,15 +173,22 @@ Source: [docs/assets/flow-engine.mmd](docs/assets/flow-engine.mmd) · Regenerati
 
 ## Install
 
+> **Not published to PyPI.** The bare name `cyclops` on the public PyPI
+> registry belongs to an unrelated project (a Sentry gateway by
+> heynemann) — do **not** run `pip install cyclops`. Build from source
+> in this repo instead:
+
 ```sh
-pip install cyclops
+git clone https://github.com/enchanter-ai/cyclops.git
+cd cyclops
+pip install -e .
 ```
 
 Runtime needs only `mcp` and `networkx`. Serving the proxy over Streamable HTTP adds an optional extra; the test toolchain is another:
 
 ```sh
-pip install "cyclops[http]"   # adds uvicorn + starlette for --http serving
-pip install "cyclops[dev]"    # adds pytest + ruff + mypy
+pip install -e ".[http]"   # adds uvicorn + starlette for --http serving
+pip install -e ".[dev]"    # adds pytest + ruff + mypy
 ```
 
 ## Quickstart
