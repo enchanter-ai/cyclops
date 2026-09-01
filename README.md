@@ -230,7 +230,7 @@ The **enforcement path** is `proxy.py → detector.py → {classify · overlap �
 
 | Module | Role |
 |--------|------|
-| `enums/` | Typed vocabulary — Server, Tool, Taint, Mode, FlowClass, Transport |
+| `enums/` | Typed vocabulary — FlowClass, Mode, Taint, Transport |
 | `records/` | `ToolCall`, `Metrics`, `Flow` dataclasses |
 | `patterns.toml` | All detection data — nothing hardcoded in code |
 | `config.py` | Loads `patterns.toml` into typed constants |
@@ -363,7 +363,7 @@ Not suggestions — contracts, enforced by tests and review. This is how cyclops
 | Invariant | Enforced by |
 |-----------|-------------|
 | **Model-free decision path** — no LLM / network / randomness decides a verdict | review; the detector fronts the injectable agent, so it must not be injectable |
-| **Nothing hardcoded** — every server / tool / taint / mode name is an `enum` | no string literals in logic |
+| **Nothing hardcoded** — server / tool names are `str`; taint / mode / flow-class / transport names are `enum`s; all detection data lives in `patterns.toml` | no detection literals in logic |
 | **Detection data is data** — all patterns live in `patterns.toml`, loaded by `config.py` | adding a pattern edits the TOML, never a `.py` |
 | **No comments, no double blank lines** in any source file | `tests/test_style.py` |
 | **Honest credit** — the toxic-flow concept is Invariant Labs'; the trifecta is Willison's | [docs/differentiation.md](docs/differentiation.md) |

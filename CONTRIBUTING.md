@@ -13,7 +13,7 @@ Python ≥ 3.11. Runtime dependencies are exactly two: `mcp` and `networkx`. Ser
 
 Beyond what the test enforces, the project holds these rules:
 
-3. **Nothing hardcoded.** Every server / tool / taint / mode name is an enum (`cyclops/enums/`). No string literal `"filesystem"`, `"web"`, `"post"` in logic — wire it to the enum.
+3. **Nothing hardcoded.** Server and tool names are plain `str` sourced from `patterns.toml` — never string literals like `"filesystem"`, `"web"`, `"post"` in logic. Taint, mode, flow-class, and transport names are enums (`cyclops/enums/`); wire those to the enum.
 4. **All detection data lives in `patterns.toml`.** Untrusted/sensitive server lists, secret markers, sensitive paths, egress pairs, token regex — data, not code. `config.py` loads it into typed constants. Adding a pattern means editing `patterns.toml`, never a `.py`.
 5. **Dataclasses live in `cyclops/records/`.** Not "models" (this project has no ORM and no LLM), not "entities" (no database).
 6. **The detector is deterministic and model-free.** No LLM, no network, no randomness in the decision path. This is a hard invariant — a change that makes detection depend on a model is rejected on sight.
@@ -32,7 +32,7 @@ All four must pass. `mypy` runs in `strict` mode.
 ## Adding a detection pattern
 
 1. Edit `cyclops/patterns.toml` — add to the relevant list (`untrusted_servers`, `sensitive_servers`, `sensitive_paths`, `secret_markers`, `egress`, `token_regex`).
-2. If the pattern references a new server or tool, add it to the matching enum in `cyclops/enums/` first, then reference the enum value from `patterns.toml`.
+2. If the pattern references a new server or tool, just use its name as a `str` in `patterns.toml` (server / tool names are not enums); declare the server in `downstream.toml` so the closure check passes.
 3. Add a test that exercises the new pattern through the detector, plus a benign negative case that must stay silent.
 
 ## Adding a differentiator
@@ -45,7 +45,7 @@ Before opening a PR, verify:
 
 1. `ruff check` clean, `mypy` clean, `pytest` green.
 2. No comments and no double blank lines in any changed source file (`test_style.py` proves it).
-3. Every new name is an enum; no hardcoded strings in logic.
+3. Taint / mode / flow-class / transport names are enums; server / tool names are `str` from `patterns.toml`; no hardcoded detection strings in logic.
 4. New detection data is in `patterns.toml`, not in code.
 5. The detector still makes zero model / network calls in the decision path.
 6. Any new README claim is credited in `docs/differentiation.md`.
