@@ -9,7 +9,7 @@
   <a href="../../actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/enchanter-ai/cyclops/ci.yml?branch=main&style=for-the-badge"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/Python-3.11%2B-58a6ff?style=for-the-badge">
   <img alt="6 algorithms" src="https://img.shields.io/badge/Algorithms-6-bc8cff?style=for-the-badge">
-  <img alt="44 tests" src="https://img.shields.io/badge/Tests-44-8957e5?style=for-the-badge">
+  <img alt="48 tests" src="https://img.shields.io/badge/Tests-48-8957e5?style=for-the-badge">
   <img alt="Zero LLM calls in the decision path" src="https://img.shields.io/badge/LLM_in_decision_path-0-f85149?style=for-the-badge">
   <a href="https://www.repostatus.org/#active"><img alt="Project Status: Active" src="https://www.repostatus.org/badges/latest/active.svg"></a>
 </p>
@@ -86,8 +86,8 @@ Not for:
 | **Runtime dependencies** | 2 (`mcp`, `networkx`) |
 | **Transports** | 2 (stdio, Streamable HTTP) |
 | **Modes** | 2 (detect, prevent) |
-| **Tests** | 44 |
-| **Lines of Python** | 510 |
+| **Tests** | 48 |
+| **Lines of Python** | ~517 |
 | **Python** | 3.11+ |
 
 A complete toxic-flow detector in ~500 lines, with nothing hardcoded and no model in the loop.
@@ -230,7 +230,7 @@ The **enforcement path** is `proxy.py → detector.py → {classify · overlap �
 
 | Module | Role |
 |--------|------|
-| `enums/` | Typed vocabulary — Server, Tool, Taint, Mode, FlowClass, Transport |
+| `enums/` | Typed vocabulary — FlowClass, Mode, Taint, Transport |
 | `records/` | `ToolCall`, `Metrics`, `Flow` dataclasses |
 | `patterns.toml` | All detection data — nothing hardcoded in code |
 | `config.py` | Loads `patterns.toml` into typed constants |
@@ -363,7 +363,7 @@ Not suggestions — contracts, enforced by tests and review. This is how cyclops
 | Invariant | Enforced by |
 |-----------|-------------|
 | **Model-free decision path** — no LLM / network / randomness decides a verdict | review; the detector fronts the injectable agent, so it must not be injectable |
-| **Nothing hardcoded** — every server / tool / taint / mode name is an `enum` | no string literals in logic |
+| **Nothing hardcoded** — server / tool names are `str`; taint / mode / flow-class / transport names are `enum`s; all detection data lives in `patterns.toml` | no detection literals in logic |
 | **Detection data is data** — all patterns live in `patterns.toml`, loaded by `config.py` | adding a pattern edits the TOML, never a `.py` |
 | **No comments, no double blank lines** in any source file | `tests/test_style.py` |
 | **Honest credit** — the toxic-flow concept is Invariant Labs'; the trifecta is Willison's | [docs/differentiation.md](docs/differentiation.md) |
@@ -394,15 +394,15 @@ A file-by-file map with runtime flows lives in [docs/architecture.md](docs/archi
 pytest
 ```
 
-44 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
+48 tests, green on Python 3.11 and 3.12 in [CI](../../actions/workflows/ci.yml) (alongside `ruff` and `mypy --strict`):
 
 - Taint classification (4)
 - Encoding-unmask overlap — base64, hex, nested (6)
 - Leak-volume severity (4)
 - Detector detect / prevent, targeted blocking, leak aggregation, arbitrary real tool names (10)
-- Flow engine — typed exfil vs. excessive-agency, OWASP tags, per-class blocking (9)
-- Downstream config loader — role binding, transport validation, template (8)
-- Proxy tool-name collision handling (2)
+- Flow engine — typed exfil vs. excessive-agency, OWASP tags, per-class blocking (7)
+- Downstream config loader — role binding, transport validation, template (10)
+- Proxy tool-name collision handling (4)
 - House-style guard — no comments, no double blank lines (3)
 
 The **downstream config smoke** CI step additionally asserts the shipped template parses to every logical role.
