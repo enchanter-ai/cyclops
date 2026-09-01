@@ -44,7 +44,7 @@ Source: [assets/module-graph.mmd](assets/module-graph.mmd) · Regeneration comma
 
 | File | Role | Depends on |
 |------|------|-----------|
-| `enums/` | `Server`, `Tool`, `Taint`, `Mode` — the only place names live | — |
+| `enums/` | `FlowClass`, `Mode`, `Taint`, `Transport` — typed vocabulary (server / tool names are plain `str`) | — |
 | `patterns.toml` | untrusted/sensitive servers, secret markers, egress pairs, token regex | — |
 | `config.py` | loads `patterns.toml` into typed, enum-keyed constants | enums |
 | `overlap.py` | tokenizes text and matches across **decoded** forms (base64) — the encoding-unmask | config |
