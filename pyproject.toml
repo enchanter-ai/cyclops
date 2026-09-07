@@ -29,7 +29,7 @@ Issues = "https://github.com/enchanter-ai/cyclops/issues"
 Changelog = "https://github.com/enchanter-ai/cyclops/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-http = ["uvicorn>=0.30", "starlette>=0.37"]
+http = ["uvicorn>=0.30", "starlette>=1.6.0"]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
 
 [project.scripts]
