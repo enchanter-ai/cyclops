@@ -25,3 +25,6 @@ downstream.toml
 graphify-out/
 .ua/
 .understand-anything/
+
+# Windows null-device artifact: `> NUL` under a POSIX shell creates a real file
+NUL
